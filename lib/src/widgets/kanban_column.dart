@@ -44,6 +44,10 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
       decoration: BoxDecoration(
         color: widget.theme.columnColor,
         borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(
+          color: widget.theme.cardBorderColor.withOpacity(0.3),
+          width: 1.0,
+        ),
       ),
       child: Column(
         children: [
@@ -65,7 +69,7 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(8.0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade300,
+            color: Colors.black.withOpacity(0.1),
             offset: const Offset(0, 1),
             blurRadius: 3,
           ),
@@ -78,9 +82,10 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
           Expanded(
             child: Text(
               widget.column.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16.0,
                 fontWeight: FontWeight.bold,
+                color: widget.theme.headerTextColor,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -89,16 +94,17 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: widget.theme.columnColor,
               borderRadius: BorderRadius.circular(12.0),
             ),
             child: Text(
               widget.column.limit != null
                   ? '${widget.items.length}/${widget.column.limit}'
                   : '${widget.items.length}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.0,
                 fontWeight: FontWeight.w500,
+                color: widget.theme.countTextColor,
               ),
             ),
           ),
@@ -173,6 +179,8 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
             item: item,
             backgroundColor: widget.theme.cardColor,
             borderColor: widget.theme.cardBorderColor,
+            titleColor: widget.theme.cardTitleColor,
+            subtitleColor: widget.theme.cardSubtitleColor,
             onMoveLeft: widget.canMoveLeft && widget.targetLeftHasSpace
                 ? () => widget.onMoveToColumn(item.id, 'left')
                 : null,
