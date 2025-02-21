@@ -44,69 +44,103 @@ class KanbanCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8.0),
         side: BorderSide(color: borderColor),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Card content
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
+      child: MouseRegion(
+        cursor: SystemMouseCursors.grab,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: isDragging
+                ? null
+                : LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      backgroundColor,
+                      backgroundColor.withOpacity(0.95),
+                    ],
+                  ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 12.0, 8.0, 12.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(
-                        item.title,
-                        style: const TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            item.title,
+                            style: const TextStyle(
+                              fontSize: 17.0,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 6.0),
+                          Text(
+                            item.subtitle,
+                            style: TextStyle(
+                              fontSize: 14.0,
+                              height: 1.3,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Icon(
-                      Icons.drag_handle,
-                      color: Colors.grey.shade400,
-                      size: 20.0,
+                    const SizedBox(width: 8.0),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4.0,
+                        vertical: 2.0,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(
+                            color: borderColor.withOpacity(0.7),
+                            width: 1.0,
+                          ),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildControlButton(
+                            icon: Icons.chevron_left,
+                            onPressed: onMoveLeft,
+                            tooltip: 'Move to Previous Column',
+                            color: onMoveLeft != null
+                                ? Colors.blue.shade700
+                                : Colors.grey.shade300,
+                          ),
+                          Container(
+                            height: 1,
+                            width: 16,
+                            margin: const EdgeInsets.symmetric(vertical: 2.0),
+                            color: borderColor.withOpacity(0.7),
+                          ),
+                          _buildControlButton(
+                            icon: Icons.chevron_right,
+                            onPressed: onMoveRight,
+                            tooltip: 'Move to Next Column',
+                            color: onMoveRight != null
+                                ? Colors.blue.shade700
+                                : Colors.grey.shade300,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4.0),
-                Text(
-                  item.subtitle,
-                  style: TextStyle(
-                    fontSize: 14.0,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Control buttons for column movement
-          Container(
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: borderColor),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildControlButton(
-                  icon: Icons.arrow_back,
-                  onPressed: onMoveLeft,
-                  tooltip: 'Move Left',
-                ),
-                _buildControlButton(
-                  icon: Icons.arrow_forward,
-                  onPressed: onMoveRight,
-                  tooltip: 'Move Right',
-                ),
-              ],
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -115,21 +149,29 @@ class KanbanCard extends StatelessWidget {
     required IconData icon,
     VoidCallback? onPressed,
     required String tooltip,
+    required Color color,
   }) {
-    return IconButton(
-      icon: Icon(
-        icon,
-        size: 20.0,
+    return SizedBox(
+      width: 32.0,
+      height: 28.0,
+      child: Tooltip(
+        message: tooltip,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(4.0),
+            child: Container(
+              alignment: Alignment.center,
+              child: Icon(
+                icon,
+                size: 18.0,
+                color: color,
+              ),
+            ),
+          ),
+        ),
       ),
-      onPressed: onPressed,
-      tooltip: tooltip,
-      constraints: const BoxConstraints(
-        minWidth: 32.0,
-        minHeight: 32.0,
-      ),
-      padding: EdgeInsets.zero,
-      visualDensity: VisualDensity.compact,
-      splashRadius: 20.0,
     );
   }
 }
