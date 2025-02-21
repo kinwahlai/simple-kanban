@@ -116,7 +116,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
     }
   }
 
-  void _addItem(String columnTitle, String title) {
+  void _addItem(String columnTitle, String title, String subtitle) {
     final columnIndex = _columns.indexWhere((col) => col.title == columnTitle);
     if (columnIndex == -1) return;
 
@@ -127,7 +127,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
     final item = KanbanItem(
       id: itemId,
       title: title,
-      subtitle: 'Added to $columnTitle',
+      subtitle: subtitle,
     );
 
     setState(() {
@@ -227,7 +227,8 @@ class _KanbanBoardState extends State<KanbanBoard> {
                 column: column,
                 items: _getItemsForColumn(column),
                 onAddItem: config.showFooter
-                    ? (title) => _addItem(column.title, title)
+                    ? (title, subtitle) =>
+                        _addItem(column.title, title, subtitle)
                     : null,
                 onMoveToColumn: _moveToColumn,
                 onReorderItem: _reorderItem,
