@@ -5,8 +5,6 @@ class KanbanCard extends StatelessWidget {
   final KanbanItem item;
   final Color backgroundColor;
   final Color borderColor;
-  final VoidCallback? onMoveUp;
-  final VoidCallback? onMoveDown;
   final VoidCallback? onMoveLeft;
   final VoidCallback? onMoveRight;
 
@@ -15,16 +13,32 @@ class KanbanCard extends StatelessWidget {
     required this.item,
     this.backgroundColor = Colors.white,
     this.borderColor = const Color(0xFFE0E0E0),
-    this.onMoveUp,
-    this.onMoveDown,
     this.onMoveLeft,
     this.onMoveRight,
   });
 
   @override
   Widget build(BuildContext context) {
+    return Draggable<String>(
+      data: item.id,
+      feedback: Material(
+        elevation: 4.0,
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.3,
+          child: _buildCardContent(isDragging: true),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.5,
+        child: _buildCardContent(isDragging: false),
+      ),
+      child: _buildCardContent(isDragging: false),
+    );
+  }
+
+  Widget _buildCardContent({required bool isDragging}) {
     return Card(
-      elevation: 2.0,
+      elevation: isDragging ? 0 : 2.0,
       color: backgroundColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8.0),
@@ -40,12 +54,23 @@ class KanbanCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  item.title,
-                  style: const TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.title,
+                        style: const TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.drag_handle,
+                      color: Colors.grey.shade400,
+                      size: 20.0,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4.0),
                 Text(
@@ -58,7 +83,7 @@ class KanbanCard extends StatelessWidget {
               ],
             ),
           ),
-          // Control buttons
+          // Control buttons for column movement
           Container(
             decoration: BoxDecoration(
               border: Border(
@@ -68,16 +93,6 @@ class KanbanCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildControlButton(
-                  icon: Icons.arrow_upward,
-                  onPressed: onMoveUp,
-                  tooltip: 'Move Up',
-                ),
-                _buildControlButton(
-                  icon: Icons.arrow_downward,
-                  onPressed: onMoveDown,
-                  tooltip: 'Move Down',
-                ),
                 _buildControlButton(
                   icon: Icons.arrow_back,
                   onPressed: onMoveLeft,
