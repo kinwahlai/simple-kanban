@@ -12,14 +12,14 @@ class KanbanColumnConfig {
   /// If null, the column can hold unlimited items
   final int? limit;
 
-  /// Whether this column should show the footer with add functionality
-  final bool showFooter;
+  /// Whether this column allows adding new items
+  final bool canAddItems;
 
   const KanbanColumnConfig({
     required this.title,
     this.initialItems = const [],
     this.limit,
-    this.showFooter = true,
+    this.canAddItems = false,
   });
 
   /// Creates a backlog-style column (unlimited items by default, with add functionality)
@@ -32,21 +32,22 @@ class KanbanColumnConfig {
       title: title,
       initialItems: initialItems,
       limit: limit,
-      showFooter: true,
+      canAddItems: true,
     );
   }
 
-  /// Creates a work-in-progress column (limited items, no add functionality)
+  /// Creates a work-in-progress column (limited items, no add functionality by default)
   factory KanbanColumnConfig.workInProgress({
     String title = 'In Progress',
     List<KanbanItem> initialItems = const [],
     required int limit,
+    bool canAddItems = false,
   }) {
     return KanbanColumnConfig(
       title: title,
       initialItems: initialItems,
       limit: limit,
-      showFooter: false,
+      canAddItems: canAddItems,
     );
   }
 
@@ -55,12 +56,13 @@ class KanbanColumnConfig {
     String title = 'Done',
     List<KanbanItem> initialItems = const [],
     int? limit,
+    bool canAddItems = false,
   }) {
     return KanbanColumnConfig(
       title: title,
       initialItems: initialItems,
       limit: limit,
-      showFooter: false,
+      canAddItems: canAddItems,
     );
   }
 
@@ -69,13 +71,13 @@ class KanbanColumnConfig {
     String? title,
     List<KanbanItem>? initialItems,
     int? limit,
-    bool? showFooter,
+    bool? canAddItems,
   }) {
     return KanbanColumnConfig(
       title: title ?? this.title,
       initialItems: initialItems ?? this.initialItems,
       limit: limit ?? this.limit,
-      showFooter: showFooter ?? this.showFooter,
+      canAddItems: canAddItems ?? this.canAddItems,
     );
   }
 }

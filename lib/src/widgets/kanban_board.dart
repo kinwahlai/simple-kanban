@@ -226,7 +226,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
               child: KanbanColumnWidget(
                 column: column,
                 items: _getItemsForColumn(column),
-                onAddItem: config.showFooter
+                onAddItem: config.canAddItems
                     ? (title, subtitle) =>
                         _addItem(column.title, title, subtitle)
                     : null,
@@ -237,7 +237,6 @@ class _KanbanBoardState extends State<KanbanBoard> {
                 targetLeftHasSpace: leftHasSpace,
                 targetRightHasSpace: rightHasSpace,
                 theme: theme,
-                showFooter: config.showFooter,
               ),
             ),
           );
