@@ -110,7 +110,6 @@ class _ExamplePageState extends State<ExamplePage> {
       cardColor: isDark ? Color(0xFF3D3D3D) : Colors.blue.shade50,
       cardBorderColor: isDark ? Color(0xFF505050) : Colors.blue.shade200,
       headerColor: isDark ? Color(0xFF0D47A1) : Colors.blue.shade500,
-      footerColor: isDark ? Color(0xFF2D2D2D) : Colors.white,
 
       // Text colors
       headerTextColor: Colors.white,

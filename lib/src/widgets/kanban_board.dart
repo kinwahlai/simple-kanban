@@ -11,7 +11,6 @@ class KanbanBoardTheme {
   final Color cardColor;
   final Color cardBorderColor;
   final Color headerColor;
-  final Color footerColor;
   final Color headerTextColor;
   final Color cardTitleColor;
   final Color cardSubtitleColor;
@@ -23,7 +22,6 @@ class KanbanBoardTheme {
     this.cardColor = Colors.white,
     this.cardBorderColor = const Color(0xFFE0E0E0),
     this.headerColor = Colors.white,
-    this.footerColor = Colors.white,
     this.headerTextColor = Colors.black87,
     this.cardTitleColor = Colors.black87,
     this.cardSubtitleColor = Colors.black54,
