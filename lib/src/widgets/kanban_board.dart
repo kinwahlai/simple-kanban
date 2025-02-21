@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/kanban_item.dart';
 import '../models/kanban_column.dart';
+import '../models/kanban_column_config.dart';
 import 'kanban_column.dart';
 
 class KanbanBoardTheme {
@@ -23,25 +24,53 @@ class KanbanBoardTheme {
 }
 
 class KanbanBoard extends StatefulWidget {
-  final Map<String, List<KanbanItem>>? initialItems;
-  final Map<String, int>? columnLimits;
+  /// List of column configurations that define the board layout
+  final List<KanbanColumnConfig> columns;
+
+  /// Optional theme for customizing the board's appearance
   final KanbanBoardTheme? theme;
-  final List<String> columnTitles;
 
-  /// Specifies which columns should display a footer with add item functionality.
-  /// If null, all columns will show footers (default behavior).
-  /// If provided, only columns whose titles are in this set will show footers.
-  /// Example: {'To Do'} will only show footer in the "To Do" column.
-  final Set<String>? columnsWithFooter;
+  /// Default column configuration for a standard board
+  static final List<KanbanColumnConfig> _defaultColumns = [
+    KanbanColumnConfig.backlog(),
+    KanbanColumnConfig.workInProgress(limit: 3),
+    KanbanColumnConfig.done(),
+  ];
 
-  const KanbanBoard({
+  KanbanBoard({
     super.key,
-    this.initialItems,
-    this.columnLimits,
+    List<KanbanColumnConfig>? columns,
     this.theme,
-    this.columnTitles = const ['To Do', 'In Progress', 'Done'],
-    this.columnsWithFooter,
-  });
+  }) : columns = columns ?? _defaultColumns;
+
+  /// Creates a standard three-column board with typical settings
+  factory KanbanBoard.standard({
+    KanbanBoardTheme? theme,
+    List<KanbanItem>? backlogItems,
+    List<KanbanItem>? inProgressItems,
+    List<KanbanItem>? doneItems,
+    int? backlogLimit,
+    int? workInProgressLimit = 3,
+    int? doneLimit,
+  }) {
+    return KanbanBoard(
+      theme: theme,
+      columns: [
+        KanbanColumnConfig.backlog(
+          initialItems: backlogItems ?? [],
+          limit: backlogLimit,
+        ),
+        KanbanColumnConfig.workInProgress(
+          limit: workInProgressLimit ?? 3,
+          initialItems: inProgressItems ?? [],
+        ),
+        KanbanColumnConfig.done(
+          initialItems: doneItems ?? [],
+          limit: doneLimit,
+        ),
+      ],
+    );
+  }
 
   @override
   State<KanbanBoard> createState() => _KanbanBoardState();
@@ -61,21 +90,19 @@ class _KanbanBoardState extends State<KanbanBoard> {
   void _initializeBoard() {
     _items = {};
 
-    // Initialize items from the provided initial items
-    widget.initialItems?.forEach((columnTitle, items) {
-      for (var item in items) {
+    // Initialize items from the configurations
+    for (var config in widget.columns) {
+      for (var item in config.initialItems) {
         _items[item.id] = item;
       }
-    });
+    }
 
-    // Initialize columns with provided limits and items
-    _columns = widget.columnTitles.map((title) {
-      final limit = widget.columnLimits?[title];
-      final columnItems = widget.initialItems?[title] ?? [];
+    // Initialize columns from configurations
+    _columns = widget.columns.map((config) {
       return KanbanColumn(
-        title: title,
-        itemIds: columnItems.map((item) => item.id).toList(),
-        limit: limit,
+        title: config.title,
+        itemIds: config.initialItems.map((item) => item.id).toList(),
+        limit: config.limit,
       );
     }).toList();
   }
@@ -184,6 +211,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
         children: _columns.asMap().entries.map((entry) {
           final index = entry.key;
           final column = entry.value;
+          final config = widget.columns[index];
 
           // Check if adjacent columns have space
           final leftHasSpace =
@@ -192,21 +220,15 @@ class _KanbanBoardState extends State<KanbanBoard> {
               ? _columns[index + 1].canAddItem()
               : false;
 
-          // Determine if this column should have a footer
-          // If columnsWithFooter is null, all columns get footers (default behavior)
-          // If columnsWithFooter is provided, only columns in the set get footers
-          final hasFooter =
-              widget.columnsWithFooter?.contains(column.title) ?? true;
-
           return Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: KanbanColumnWidget(
                 column: column,
                 items: _getItemsForColumn(column),
-                // Only provide onAddItem callback if this column should have a footer
-                onAddItem:
-                    hasFooter ? (title) => _addItem(column.title, title) : null,
+                onAddItem: config.showFooter
+                    ? (title) => _addItem(column.title, title)
+                    : null,
                 onMoveToColumn: _moveToColumn,
                 onReorderItem: _reorderItem,
                 canMoveLeft: index > 0,
@@ -214,7 +236,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
                 targetLeftHasSpace: leftHasSpace,
                 targetRightHasSpace: rightHasSpace,
                 theme: theme,
-                showFooter: hasFooter,
+                showFooter: config.showFooter,
               ),
             ),
           );
