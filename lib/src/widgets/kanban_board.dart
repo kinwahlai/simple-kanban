@@ -12,6 +12,10 @@ class KanbanBoardTheme {
   final Color cardBorderColor;
   final Color headerColor;
   final Color footerColor;
+  final Color headerTextColor;
+  final Color cardTitleColor;
+  final Color cardSubtitleColor;
+  final Color countTextColor;
 
   const KanbanBoardTheme({
     this.backgroundColor = const Color(0xFFE0E0E0),
@@ -20,6 +24,10 @@ class KanbanBoardTheme {
     this.cardBorderColor = const Color(0xFFE0E0E0),
     this.headerColor = Colors.white,
     this.footerColor = Colors.white,
+    this.headerTextColor = Colors.black87,
+    this.cardTitleColor = Colors.black87,
+    this.cardSubtitleColor = Colors.black54,
+    this.countTextColor = Colors.black87,
   });
 }
 

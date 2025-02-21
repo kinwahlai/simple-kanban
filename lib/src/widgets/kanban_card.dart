@@ -5,6 +5,8 @@ class KanbanCard extends StatelessWidget {
   final KanbanItem item;
   final Color backgroundColor;
   final Color borderColor;
+  final Color titleColor;
+  final Color subtitleColor;
   final VoidCallback? onMoveLeft;
   final VoidCallback? onMoveRight;
 
@@ -13,6 +15,8 @@ class KanbanCard extends StatelessWidget {
     required this.item,
     this.backgroundColor = Colors.white,
     this.borderColor = const Color(0xFFE0E0E0),
+    this.titleColor = Colors.black87,
+    this.subtitleColor = Colors.black54,
     this.onMoveLeft,
     this.onMoveRight,
   });
@@ -42,8 +46,13 @@ class KanbanCard extends StatelessWidget {
       color: backgroundColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8.0),
-        side: BorderSide(color: borderColor),
+        side: BorderSide(
+          color: borderColor,
+          width: 1.0,
+          style: BorderStyle.solid,
+        ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: MouseRegion(
         cursor: SystemMouseCursors.grab,
         child: Container(
@@ -74,10 +83,11 @@ class KanbanCard extends StatelessWidget {
                         children: [
                           Text(
                             item.title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 17.0,
                               fontWeight: FontWeight.w700,
                               letterSpacing: -0.3,
+                              color: titleColor,
                             ),
                           ),
                           const SizedBox(height: 6.0),
@@ -86,7 +96,7 @@ class KanbanCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 14.0,
                               height: 1.3,
-                              color: Colors.grey.shade600,
+                              color: subtitleColor,
                             ),
                           ),
                         ],
