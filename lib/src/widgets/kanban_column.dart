@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/kanban_item.dart';
 import '../models/kanban_column.dart' as models;
+import 'kanban_board.dart';
 import 'kanban_card.dart';
 
 class KanbanColumnWidget extends StatefulWidget {
@@ -8,6 +9,7 @@ class KanbanColumnWidget extends StatefulWidget {
   final List<KanbanItem> items;
   final Function(String) onAddItem;
   final Function(String, String) onMoveItem;
+  final KanbanBoardTheme theme;
 
   const KanbanColumnWidget({
     super.key,
@@ -15,6 +17,7 @@ class KanbanColumnWidget extends StatefulWidget {
     required this.items,
     required this.onAddItem,
     required this.onMoveItem,
+    required this.theme,
   });
 
   @override
@@ -34,7 +37,7 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: widget.theme.columnColor,
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Column(
@@ -53,7 +56,7 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.theme.headerColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(8.0)),
         boxShadow: [
           BoxShadow(
@@ -111,7 +114,11 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
           itemBuilder: (context, index) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4.0),
-              child: KanbanCard(item: widget.items[index]),
+              child: KanbanCard(
+                item: widget.items[index],
+                backgroundColor: widget.theme.cardColor,
+                borderColor: widget.theme.cardBorderColor,
+              ),
             );
           },
         );
@@ -123,7 +130,7 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
     return Container(
       padding: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.theme.footerColor,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(8.0)),
         boxShadow: [
           BoxShadow(

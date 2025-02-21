@@ -4,8 +4,37 @@ import '../models/kanban_item.dart';
 import '../models/kanban_column.dart';
 import 'kanban_column.dart';
 
+class KanbanBoardTheme {
+  final Color backgroundColor;
+  final Color columnColor;
+  final Color cardColor;
+  final Color cardBorderColor;
+  final Color headerColor;
+  final Color footerColor;
+
+  const KanbanBoardTheme({
+    this.backgroundColor = const Color(0xFFE0E0E0),
+    this.columnColor = const Color(0xFFF5F5F5),
+    this.cardColor = Colors.white,
+    this.cardBorderColor = const Color(0xFFE0E0E0),
+    this.headerColor = Colors.white,
+    this.footerColor = Colors.white,
+  });
+}
+
 class KanbanBoard extends StatefulWidget {
-  const KanbanBoard({super.key});
+  final Map<String, List<KanbanItem>>? initialItems;
+  final Map<String, int>? columnLimits;
+  final KanbanBoardTheme? theme;
+  final List<String> columnTitles;
+
+  const KanbanBoard({
+    super.key,
+    this.initialItems,
+    this.columnLimits,
+    this.theme,
+    this.columnTitles = const ['To Do', 'In Progress', 'Done'],
+  });
 
   @override
   State<KanbanBoard> createState() => _KanbanBoardState();
@@ -13,24 +42,45 @@ class KanbanBoard extends StatefulWidget {
 
 class _KanbanBoardState extends State<KanbanBoard> {
   final _uuid = const Uuid();
-  final Map<String, KanbanItem> _items = {};
-  final List<KanbanColumn> _columns = [
-    KanbanColumn(
-      title: 'To Do',
-      itemIds: [],
-      limit: 5,
-    ),
-    KanbanColumn(
-      title: 'In Progress',
-      itemIds: [],
-      limit: 3,
-    ),
-    KanbanColumn(
-      title: 'Done',
-      itemIds: [],
-      limit: 5,
-    ),
-  ];
+  late final Map<String, KanbanItem> _items;
+  late final List<KanbanColumn> _columns;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeBoard();
+  }
+
+  void _initializeBoard() {
+    _items = {};
+
+    // Initialize items from the provided initial items
+    widget.initialItems?.forEach((columnTitle, items) {
+      for (var item in items) {
+        _items[item.id] = item;
+      }
+    });
+
+    // Initialize columns with provided limits and items
+    _columns = widget.columnTitles.map((title) {
+      final limit = widget.columnLimits?[title] ?? _getDefaultLimit(title);
+      final columnItems = widget.initialItems?[title] ?? [];
+      return KanbanColumn(
+        title: title,
+        itemIds: columnItems.map((item) => item.id).toList(),
+        limit: limit,
+      );
+    }).toList();
+  }
+
+  int _getDefaultLimit(String columnTitle) {
+    switch (columnTitle) {
+      case 'In Progress':
+        return 3;
+      default:
+        return 5;
+    }
+  }
 
   void _addItem(String columnTitle, String title) {
     final columnIndex = _columns.indexWhere((col) => col.title == columnTitle);
@@ -88,10 +138,12 @@ class _KanbanBoardState extends State<KanbanBoard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = widget.theme ?? const KanbanBoardTheme();
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: theme.backgroundColor,
         borderRadius: BorderRadius.circular(12.0),
       ),
       child: Row(
@@ -105,6 +157,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
                 items: _getItemsForColumn(column),
                 onAddItem: (title) => _addItem(column.title, title),
                 onMoveItem: _moveItem,
+                theme: theme,
               ),
             ),
           );

@@ -4,11 +4,15 @@ import '../models/kanban_item.dart';
 class KanbanCard extends StatelessWidget {
   final KanbanItem item;
   final VoidCallback? onTap;
+  final Color backgroundColor;
+  final Color borderColor;
 
   const KanbanCard({
     super.key,
     required this.item,
     this.onTap,
+    this.backgroundColor = Colors.white,
+    this.borderColor = const Color(0xFFE0E0E0),
   });
 
   @override
@@ -33,9 +37,10 @@ class KanbanCard extends StatelessWidget {
   Widget _buildCard() {
     return Card(
       elevation: 2.0,
+      color: backgroundColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8.0),
-        side: BorderSide(color: Colors.grey.shade300),
+        side: BorderSide(color: borderColor),
       ),
       child: InkWell(
         onTap: onTap,
