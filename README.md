@@ -8,9 +8,8 @@ A simple, customizable Kanban board widget for Flutter applications.
 
 - Modern, clean card design with subtle visual feedback
 - Three columns with equal widths and height that expands to the container
-- Headers and footers that stick to the top and bottom
-- Headers with text labels and item count indicators
-- Footers with plus icon and text field for adding new items
+- Mandatory headers with text labels and item count indicators
+- Optional footers with add item functionality (configurable per column)
 - Items displayed as cards with modern typography and layout
 - Intuitive drag-and-drop reordering within columns
 - Easy column-to-column movement with directional controls
@@ -29,11 +28,13 @@ A simple, customizable Kanban board widget for Flutter applications.
 - Tooltips for better usability
 
 ### Column Features
+- Mandatory headers with item count indicators
+- Optional footers for adding new items
+- Configurable add item functionality per column
 - Item count with optional limit indicator
 - Optional column limits (unlimited by default)
 - Visual feedback when columns reach their limit
 - Smooth drag-and-drop reordering
-- Add new items through text input
 - Customizable column titles and limits
 
 ## Examples
@@ -56,121 +57,54 @@ class MyHomePage extends StatelessWidget {
 }
 ```
 
-### Mixed Limited and Unlimited Columns
+### Mixed Limited and Unlimited Columns with Selective Add Functionality
 
 ```dart
 KanbanBoard(
-  columnTitles: ['Backlog', 'In Progress', 'Review', 'Done'],
+  columnTitles: ['Backlog', 'In Progress', 'Done'],
+  // Only Backlog column can add new items
+  columnsWithFooter: {'Backlog'},
+  // In Progress is limited, others are unlimited
   columnLimits: {
-    'Backlog': null,        // Unlimited items
-    'In Progress': 3,       // Limited to 3 items
-    'Review': 2,           // Limited to 2 items
-    'Done': null,          // Unlimited items
+    'In Progress': 3,  // Limited to 3 items
   },
   initialItems: {
     'Backlog': [
-      KanbanItem(id: '1', title: 'Feature A', subtitle: 'Planning phase'),
-      KanbanItem(id: '2', title: 'Feature B', subtitle: 'Research needed'),
-      // Can add unlimited items
+      KanbanItem(id: '1', title: 'New Feature', subtitle: 'Planning phase'),
     ],
     'In Progress': [
-      KanbanItem(id: '3', title: 'Feature C', subtitle: 'Coding in progress'),
-      // Limited to 3 items
-    ],
-    'Review': [
-      KanbanItem(id: '4', title: 'Feature D', subtitle: 'Ready for review'),
-      // Limited to 2 items
+      KanbanItem(id: '2', title: 'Current Task', subtitle: 'In development'),
     ],
     'Done': [
-      KanbanItem(id: '5', title: 'Feature E', subtitle: 'Completed'),
-      // Can add unlimited items
+      KanbanItem(id: '3', title: 'Completed Item', subtitle: 'Ready for release'),
     ],
   },
 )
 ```
 
-### Custom Theme with Column Indicators
+### Column Configuration Options
 
-```dart
-KanbanBoard(
-  theme: KanbanBoardTheme(
-    backgroundColor: Colors.grey.shade100,
-    columnColor: Colors.white,
-    cardColor: Colors.blue.shade50,
-    cardBorderColor: Colors.blue.shade200,
-    headerColor: Colors.blue.shade500,
-    footerColor: Colors.white,
-  ),
-  columnTitles: ['To Do', 'Sprint', 'Done'],
-  columnLimits: {
-    'To Do': null,    // Backlog can have unlimited items
-    'Sprint': 5,      // Sprint is limited to 5 active items
-    'Done': null,     // Completed items are unlimited
-  },
-)
-```
+The board supports various column configurations:
 
-### Visual Indicators
+1. **Headers (Mandatory)**
+   - Always visible
+   - Shows column title
+   - Displays item count
+   - Shows limit if configured
 
-The board provides clear visual feedback about column limits:
+2. **Footers (Optional)**
+   - Can be enabled/disabled per column
+   - Provides add item functionality
+   - Only shown in specified columns
+   - Typical use cases:
+     - Backlog column with add functionality
+     - Work columns for tracking only
+     - Archive columns for completed items
 
-1. **Unlimited Columns**
-   - Show only the current item count: "3"
-   - Add button always enabled
-   - Can always receive items from other columns
-
-2. **Limited Columns**
-   - Show count with limit: "3/5"
-   - Add button disabled when full
-   - Movement controls disabled when full
-   - Visual feedback when attempting to exceed limit
-
-## Common Use Cases
-
-1. **Sprint Board**
-   - Unlimited backlog column
-   - Limited sprint column (team capacity)
-   - Unlimited done column
-
-2. **Workflow Board**
-   - Unlimited intake column
-   - Limited work-in-progress columns
-   - Unlimited archive column
-
-3. **Review System**
-   - Unlimited submission column
-   - Limited review column
-   - Limited testing column
-   - Unlimited approved column
-
-## Getting Started
-
-Add this to your package's `pubspec.yaml` file:
-
-```yaml
-dependencies:
-  simple_kanban: ^0.1.0
-```
-
-## Usage
-
-Basic usage:
-
-```dart
-import 'package:simple_kanban/simple_kanban.dart';
-
-class MyHomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: KanbanBoard(),
-      ),
-    );
-  }
-}
-```
+3. **Common Configurations**
+   - Backlog: Footer enabled, no limit
+   - Work in Progress: No footer, with limit
+   - Done: No footer, no limit
 
 ### Customization
 
@@ -196,6 +130,9 @@ KanbanBoard(
     'In Progress': 4,  // Limited to 4 items
     // 'Done' has no limit specified, so it can hold unlimited items
   },
+  
+  // Specify which columns should have add item functionality
+  columnsWithFooter: {'To Do'},  // Only To Do column can add items
   
   // Custom column titles
   columnTitles: ['Backlog', 'Doing', 'Completed'],
