@@ -18,6 +18,7 @@ class KanbanColumnWidget extends StatefulWidget {
   final bool targetLeftHasSpace;
   final bool targetRightHasSpace;
   final KanbanBoardTheme theme;
+  final bool hideHeader;
 
   const KanbanColumnWidget({
     super.key,
@@ -31,6 +32,7 @@ class KanbanColumnWidget extends StatefulWidget {
     required this.targetLeftHasSpace,
     required this.targetRightHasSpace,
     required this.theme,
+    this.hideHeader = false,
   });
 
   @override
@@ -51,7 +53,7 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
       ),
       child: Column(
         children: [
-          _buildHeader(),
+          if (!widget.hideHeader) _buildHeader(),
           Expanded(
             child: _buildItemList(),
           ),
@@ -79,38 +81,43 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
-            child: Text(
-              widget.column.title,
-              style: TextStyle(
-                fontSize: 16.0,
-                fontWeight: FontWeight.bold,
-                color: widget.theme.headerTextColor,
+          // Title and count grouped together
+          Row(
+            children: [
+              Text(
+                widget.column.title,
+                style: TextStyle(
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                  color: widget.theme.headerTextColor,
+                ),
               ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8.0),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            decoration: BoxDecoration(
-              color: widget.theme.columnColor,
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            child: Text(
-              widget.column.limit != null
-                  ? '${widget.items.length}/${widget.column.limit}'
-                  : '${widget.items.length}',
-              style: TextStyle(
-                fontSize: 12.0,
-                fontWeight: FontWeight.w500,
-                color: widget.theme.countTextColor,
+              const SizedBox(width: 8.0),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8.0,
+                  vertical: 2.0,
+                ),
+                decoration: BoxDecoration(
+                  color: widget.theme.columnColor.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: Text(
+                  widget.column.limit != null
+                      ? '${widget.items.length}/${widget.column.limit}'
+                      : '${widget.items.length}',
+                  style: TextStyle(
+                    fontSize: 13.0,
+                    fontWeight: FontWeight.w500,
+                    color: widget.theme.countTextColor,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
+          const Spacer(),
           if (widget.onAddItem != null)
             Container(
-              margin: const EdgeInsets.only(left: 8.0),
               height: 32.0,
               width: 32.0,
               decoration: BoxDecoration(
