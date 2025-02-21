@@ -10,7 +10,7 @@ class KanbanColumnWidget extends StatefulWidget {
 
   /// Callback for adding new items. If null, the column won't support adding items.
   /// This should be null for columns that shouldn't allow new items to be added.
-  final Function(String)? onAddItem;
+  final Function(String title, String subtitle)? onAddItem;
   final Function(String, String) onMoveToColumn;
   final Function(String, int) onReorderItem;
   final bool canMoveLeft;
@@ -44,11 +44,13 @@ class KanbanColumnWidget extends StatefulWidget {
 }
 
 class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
-  final TextEditingController _controller = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _subtitleController = TextEditingController();
 
   @override
   void dispose() {
-    _controller.dispose();
+    _titleController.dispose();
+    _subtitleController.dispose();
     super.dispose();
   }
 
@@ -176,37 +178,54 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              decoration: const InputDecoration(
-                hintText: 'Add new item...',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
-              ),
-              onSubmitted: (value) {
-                if (value.isNotEmpty && widget.column.canAddItem()) {
-                  widget.onAddItem?.call(value);
-                  _controller.clear();
-                }
-              },
+          TextField(
+            controller: _titleController,
+            decoration: const InputDecoration(
+              hintText: 'Item title...',
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
             ),
+            textInputAction: TextInputAction.next,
           ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: widget.column.canAddItem()
-                ? () {
-                    if (_controller.text.isNotEmpty) {
-                      widget.onAddItem?.call(_controller.text);
-                      _controller.clear();
-                    }
-                  }
-                : null,
+          const Divider(height: 1),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _subtitleController,
+                  decoration: const InputDecoration(
+                    hintText: 'Item description...',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
+                  ),
+                  onSubmitted: (_) => _handleAddItem(
+                    _titleController.text,
+                    _subtitleController.text,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: widget.column.canAddItem()
+                    ? () => _handleAddItem(
+                        _titleController.text, _subtitleController.text)
+                    : null,
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  void _handleAddItem(String title, String subtitle) {
+    if (title.isNotEmpty && widget.column.canAddItem()) {
+      widget.onAddItem?.call(title, subtitle);
+      _titleController.clear();
+      _subtitleController.clear();
+    }
   }
 }
