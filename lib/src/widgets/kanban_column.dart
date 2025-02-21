@@ -8,7 +8,12 @@ class KanbanColumnWidget extends StatefulWidget {
   final models.KanbanColumn column;
   final List<KanbanItem> items;
   final Function(String) onAddItem;
-  final Function(String, String) onMoveItem;
+  final Function(String, String) onMoveToColumn;
+  final Function(String, int) onReorderItem;
+  final bool canMoveLeft;
+  final bool canMoveRight;
+  final bool targetLeftHasSpace;
+  final bool targetRightHasSpace;
   final KanbanBoardTheme theme;
 
   const KanbanColumnWidget({
@@ -16,7 +21,12 @@ class KanbanColumnWidget extends StatefulWidget {
     required this.column,
     required this.items,
     required this.onAddItem,
-    required this.onMoveItem,
+    required this.onMoveToColumn,
+    required this.onReorderItem,
+    required this.canMoveLeft,
+    required this.canMoveRight,
+    required this.targetLeftHasSpace,
+    required this.targetRightHasSpace,
     required this.theme,
   });
 
@@ -100,31 +110,30 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
   }
 
   Widget _buildItemList() {
-    return DragTarget<String>(
-      onWillAccept: (data) {
-        // Allow dropping if either:
-        // 1. The item is from another column and we have space
-        // 2. The item is from this column (reordering)
-        return widget.column.itemIds.contains(data) ||
-            widget.column.canAddItem();
-      },
-      onAccept: (itemId) {
-        widget.onMoveItem(itemId, widget.column.title);
-      },
-      builder: (context, candidateData, rejectedData) {
-        return ListView.builder(
-          padding: const EdgeInsets.all(8.0),
-          itemCount: widget.items.length,
-          itemBuilder: (context, index) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
-              child: KanbanCard(
-                item: widget.items[index],
-                backgroundColor: widget.theme.cardColor,
-                borderColor: widget.theme.cardBorderColor,
-              ),
-            );
-          },
+    return ListView.builder(
+      padding: const EdgeInsets.all(8.0),
+      itemCount: widget.items.length,
+      itemBuilder: (context, index) {
+        final item = widget.items[index];
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: KanbanCard(
+            item: item,
+            backgroundColor: widget.theme.cardColor,
+            borderColor: widget.theme.cardBorderColor,
+            onMoveUp: index > 0
+                ? () => widget.onReorderItem(item.id, index - 1)
+                : null,
+            onMoveDown: index < widget.items.length - 1
+                ? () => widget.onReorderItem(item.id, index + 1)
+                : null,
+            onMoveLeft: widget.canMoveLeft && widget.targetLeftHasSpace
+                ? () => widget.onMoveToColumn(item.id, 'left')
+                : null,
+            onMoveRight: widget.canMoveRight && widget.targetRightHasSpace
+                ? () => widget.onMoveToColumn(item.id, 'right')
+                : null,
+          ),
         );
       },
     );
