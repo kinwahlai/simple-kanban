@@ -7,7 +7,10 @@ import 'kanban_card.dart';
 class KanbanColumnWidget extends StatefulWidget {
   final models.KanbanColumn column;
   final List<KanbanItem> items;
-  final Function(String) onAddItem;
+
+  /// Callback for adding new items. If null, the column won't support adding items.
+  /// This should be null for columns that shouldn't allow new items to be added.
+  final Function(String)? onAddItem;
   final Function(String, String) onMoveToColumn;
   final Function(String, int) onReorderItem;
   final bool canMoveLeft;
@@ -16,11 +19,16 @@ class KanbanColumnWidget extends StatefulWidget {
   final bool targetRightHasSpace;
   final KanbanBoardTheme theme;
 
+  /// Controls whether this column shows a footer with add item functionality.
+  /// If false, no footer will be shown regardless of onAddItem callback.
+  /// If true, footer will be shown only if onAddItem is also provided.
+  final bool showFooter;
+
   const KanbanColumnWidget({
     super.key,
     required this.column,
     required this.items,
-    required this.onAddItem,
+    this.onAddItem,
     required this.onMoveToColumn,
     required this.onReorderItem,
     required this.canMoveLeft,
@@ -28,6 +36,7 @@ class KanbanColumnWidget extends StatefulWidget {
     required this.targetLeftHasSpace,
     required this.targetRightHasSpace,
     required this.theme,
+    this.showFooter = true,
   });
 
   @override
@@ -56,7 +65,7 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
           Expanded(
             child: _buildItemList(),
           ),
-          _buildFooter(),
+          if (widget.showFooter && widget.onAddItem != null) _buildFooter(),
         ],
       ),
     );
@@ -179,7 +188,7 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
               ),
               onSubmitted: (value) {
                 if (value.isNotEmpty && widget.column.canAddItem()) {
-                  widget.onAddItem(value);
+                  widget.onAddItem?.call(value);
                   _controller.clear();
                 }
               },
@@ -190,7 +199,7 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
             onPressed: widget.column.canAddItem()
                 ? () {
                     if (_controller.text.isNotEmpty) {
-                      widget.onAddItem(_controller.text);
+                      widget.onAddItem?.call(_controller.text);
                       _controller.clear();
                     }
                   }

@@ -28,12 +28,19 @@ class KanbanBoard extends StatefulWidget {
   final KanbanBoardTheme? theme;
   final List<String> columnTitles;
 
+  /// Specifies which columns should display a footer with add item functionality.
+  /// If null, all columns will show footers (default behavior).
+  /// If provided, only columns whose titles are in this set will show footers.
+  /// Example: {'To Do'} will only show footer in the "To Do" column.
+  final Set<String>? columnsWithFooter;
+
   const KanbanBoard({
     super.key,
     this.initialItems,
     this.columnLimits,
     this.theme,
     this.columnTitles = const ['To Do', 'In Progress', 'Done'],
+    this.columnsWithFooter,
   });
 
   @override
@@ -185,13 +192,21 @@ class _KanbanBoardState extends State<KanbanBoard> {
               ? _columns[index + 1].canAddItem()
               : false;
 
+          // Determine if this column should have a footer
+          // If columnsWithFooter is null, all columns get footers (default behavior)
+          // If columnsWithFooter is provided, only columns in the set get footers
+          final hasFooter =
+              widget.columnsWithFooter?.contains(column.title) ?? true;
+
           return Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: KanbanColumnWidget(
                 column: column,
                 items: _getItemsForColumn(column),
-                onAddItem: (title) => _addItem(column.title, title),
+                // Only provide onAddItem callback if this column should have a footer
+                onAddItem:
+                    hasFooter ? (title) => _addItem(column.title, title) : null,
                 onMoveToColumn: _moveToColumn,
                 onReorderItem: _reorderItem,
                 canMoveLeft: index > 0,
@@ -199,6 +214,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
                 targetLeftHasSpace: leftHasSpace,
                 targetRightHasSpace: rightHasSpace,
                 theme: theme,
+                showFooter: hasFooter,
               ),
             ),
           );

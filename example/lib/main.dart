@@ -110,6 +110,7 @@ class ExamplePage extends StatelessWidget {
           columnLimits: columnLimits,
           theme: customTheme,
           columnTitles: const ['To Do', 'In Progress', 'Done'],
+          columnsWithFooter: const {'To Do'},
         ),
       ),
     );
