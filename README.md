@@ -7,7 +7,7 @@ A simple, customizable Kanban board widget for Flutter applications.
 ## Features
 
 - Modern, clean card design with subtle visual feedback
-- Three columns with equal widths and height that expands to the container
+- Customizable columns with equal widths and height that expands to the container
 - Mandatory headers with text labels and item count indicators
 - Items displayed as cards with modern typography and layout
 - Intuitive drag-and-drop reordering within columns
@@ -37,98 +37,131 @@ A simple, customizable Kanban board widget for Flutter applications.
 
 ## Examples
 
-### Basic Usage
+### Basic Usage with Custom Columns
 
 ```dart
+import 'package:flutter/material.dart';
 import 'package:simple_kanban/simple_kanban.dart';
 
-class MyHomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: KanbanBoard(),
-      ),
-    );
-  }
-}
-```
+// Example items for each column
+final backlogItems = [
+  KanbanItem(
+    id: '1',
+    title: 'Design User Interface',
+    subtitle: 'github.com/org/repo/issues/123',
+  ),
+  KanbanItem(
+    id: '2',
+    title: 'Setup CI/CD Pipeline',
+    subtitle: 'Link to Jenkins configuration',
+  ),
+];
 
-### Mixed Limited and Unlimited Columns with Selective Add Functionality
+final inProgressItems = [
+  KanbanItem(
+    id: '3',
+    title: 'User Authentication',
+    subtitle: 'PR: github.com/org/repo/pull/456',
+  ),
+];
 
-```dart
+final reviewItems = [
+  KanbanItem(
+    id: '4',
+    title: 'API Integration',
+    subtitle: 'Pending review: github.com/org/repo/pull/789',
+  ),
+];
+
+final doneItems = [
+  KanbanItem(
+    id: '5',
+    title: 'Project Setup',
+    subtitle: 'Completed on 2024-01-20',
+  ),
+];
+
+// Create a custom Kanban board with 4 columns
 KanbanBoard(
-  columnTitles: ['Backlog', 'In Progress', 'Done'],
-  // In Progress is limited, others are unlimited
-  columnLimits: {
-    'In Progress': 3,  // Limited to 3 items
-  },
-  initialItems: {
-    'Backlog': [
-      KanbanItem(id: '1', title: 'New Feature', subtitle: 'Planning phase'),
-    ],
-    'In Progress': [
-      KanbanItem(id: '2', title: 'Current Task', subtitle: 'In development'),
-    ],
-    'Done': [
-      KanbanItem(id: '3', title: 'Completed Item', subtitle: 'Ready for release'),
-    ],
-  },
+  theme: KanbanBoardTheme(
+    backgroundColor: isDark ? Color(0xFF1E1E1E) : Colors.grey.shade100,
+    columnColor: isDark ? Color(0xFF2D2D2D) : Colors.white,
+    cardColor: isDark ? Color(0xFF3D3D3D) : Colors.blue.shade50,
+    cardBorderColor: isDark ? Color(0xFF505050) : Colors.blue.shade200,
+    headerColor: isDark ? Color(0xFF0D47A1) : Colors.blue.shade500,
+    headerTextColor: Colors.white,
+    cardTitleColor: isDark ? Colors.white : Colors.black87,
+    cardSubtitleColor: isDark ? Colors.grey.shade300 : Colors.black54,
+    countTextColor: isDark ? Colors.grey.shade300 : Colors.black87,
+  ),
+  columns: [
+    KanbanColumnConfig(
+      title: 'Backlog',
+      initialItems: backlogItems,
+      canAddItems: true,
+    ),
+    KanbanColumnConfig(
+      title: 'In Progress',
+      initialItems: inProgressItems,
+      limit: 2,
+      canAddItems: true,
+    ),
+    KanbanColumnConfig(
+      title: 'Review',
+      initialItems: reviewItems,
+      limit: 3,
+    ),
+    KanbanColumnConfig(
+      title: 'Done',
+      initialItems: doneItems,
+      canAddItems: true,
+    ),
+  ],
 )
 ```
 
-### Column Configuration Options
-
-The board supports various column configurations:
-
-1. **Headers (Mandatory)**
-   - Always visible
-   - Shows column title
-   - Displays item count
-   - Shows limit if configured
-
-2. **Common Configurations**
-   - Backlog: No limit
-   - Work in Progress: With limit
-   - Done: No limit
-
-### Customization
-
-The KanbanBoard widget accepts several parameters for customization:
+### Using Standard Three-Column Layout
 
 ```dart
-KanbanBoard(
-  // Custom initial items for each column
-  initialItems: {
-    'To Do': [
-      KanbanItem(
-        id: '1',
-        title: 'Task 1',
-        subtitle: 'Description',
-      ),
-    ],
-  },
-  
-  // Custom limits for each column (optional)
-  // Columns without specified limits can hold unlimited items
-  columnLimits: {
-    'To Do': 6,        // Limited to 6 items
-    'In Progress': 4,  // Limited to 4 items
-    // 'Done' has no limit specified, so it can hold unlimited items
-  },
-  
-  // Custom column titles
-  columnTitles: ['Backlog', 'Doing', 'Completed'],
-  
-  // Custom theme
+// Create a standard Kanban board with predefined columns
+KanbanBoard.standard(
   theme: KanbanBoardTheme(
     backgroundColor: Colors.grey.shade100,
     columnColor: Colors.white,
     cardColor: Colors.blue.shade50,
     cardBorderColor: Colors.blue.shade200,
     headerColor: Colors.blue.shade500,
+    headerTextColor: Colors.white,
+    cardTitleColor: Colors.black87,
+    cardSubtitleColor: Colors.black54,
+    countTextColor: Colors.black87,
   ),
+  // Optional: Provide initial items for each column
+  backlogItems: [
+    KanbanItem(
+      id: '1',
+      title: 'New Feature',
+      subtitle: 'Planning phase',
+    ),
+  ],
+  inProgressItems: [
+    KanbanItem(
+      id: '2',
+      title: 'Current Task',
+      subtitle: 'In development',
+    ),
+  ],
+  doneItems: [
+    KanbanItem(
+      id: '3',
+      title: 'Completed Item',
+      subtitle: 'Ready for release',
+    ),
+  ],
+  // Optional: Configure column limits
+  backlogLimit: null,  // Unlimited
+  workInProgressLimit: 3,  // Limited to 3 items
+  doneLimit: null,  // Unlimited
 )
 ```
 
