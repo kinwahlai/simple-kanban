@@ -27,66 +27,59 @@ class ExamplePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Example of initial items with mixed column limits
-    final initialItems = {
-      'To Do': [
-        KanbanItem(
-          id: '1',
-          title: 'Design User Interface',
-          subtitle: 'Create wireframes and mockups',
-        ),
-        KanbanItem(
-          id: '2',
-          title: 'Setup CI/CD Pipeline',
-          subtitle: 'Configure automated builds and tests',
-        ),
-        KanbanItem(
-          id: '3',
-          title: 'User Authentication',
-          subtitle: 'Implement login and registration',
-        ),
-        KanbanItem(
-          id: '4',
-          title: 'Database Schema',
-          subtitle: 'Design initial data structure',
-        ),
-      ],
-      'In Progress': [
-        KanbanItem(
-          id: '5',
-          title: 'API Integration',
-          subtitle: 'Connect to backend services',
-        ),
-        KanbanItem(
-          id: '6',
-          title: 'Unit Tests',
-          subtitle: 'Write test cases for core features',
-        ),
-      ],
-      'Done': [
-        KanbanItem(
-          id: '7',
-          title: 'Project Setup',
-          subtitle: 'Initialize repository and dependencies',
-        ),
-        KanbanItem(
-          id: '8',
-          title: 'Requirements Doc',
-          subtitle: 'Document project specifications',
-        ),
-        KanbanItem(
-          id: '9',
-          title: 'Tech Stack Decision',
-          subtitle: 'Choose frameworks and tools',
-        ),
-      ],
-    };
+    final backlogItems = [
+      KanbanItem(
+        id: '1',
+        title: 'Design User Interface',
+        subtitle: 'Create wireframes and mockups',
+      ),
+      KanbanItem(
+        id: '2',
+        title: 'Setup CI/CD Pipeline',
+        subtitle: 'Configure automated builds and tests',
+      ),
+      KanbanItem(
+        id: '3',
+        title: 'User Authentication',
+        subtitle: 'Implement login and registration',
+      ),
+      KanbanItem(
+        id: '4',
+        title: 'Database Schema',
+        subtitle: 'Design initial data structure',
+      ),
+    ];
 
-    // Example of mixed column limits
-    final columnLimits = {
-      // No limit for To Do (backlog)
-      'In Progress': 3, // Limit work in progress to 3 items
-      // No limit for Done
-    };
+    final inProgressItems = [
+      KanbanItem(
+        id: '5',
+        title: 'API Integration',
+        subtitle: 'Connect to backend services',
+      ),
+      KanbanItem(
+        id: '6',
+        title: 'Unit Tests',
+        subtitle: 'Write test cases for core features',
+      ),
+    ];
+
+    final doneItems = [
+      KanbanItem(
+        id: '7',
+        title: 'Project Setup',
+        subtitle: 'Initialize repository and dependencies',
+      ),
+      KanbanItem(
+        id: '8',
+        title: 'Requirements Doc',
+        subtitle: 'Document project specifications',
+      ),
+      KanbanItem(
+        id: '9',
+        title: 'Tech Stack Decision',
+        subtitle: 'Choose frameworks and tools',
+      ),
+    ];
 
     // Example of custom theme
     final customTheme = KanbanBoardTheme(
@@ -105,12 +98,14 @@ class ExamplePage extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: KanbanBoard(
-          initialItems: initialItems,
-          columnLimits: columnLimits,
+        // Using the new standard factory constructor
+        child: KanbanBoard.standard(
           theme: customTheme,
-          columnTitles: const ['To Do', 'In Progress', 'Done'],
-          columnsWithFooter: const {'To Do'},
+          backlogItems: backlogItems,
+          inProgressItems: inProgressItems,
+          doneItems: doneItems,
+          backlogLimit: 10, // Limit backlog to 10 items
+          workInProgressLimit: 3, // Limit WIP to 3 items
         ),
       ),
     );
