@@ -115,18 +115,30 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
       itemCount: widget.items.length,
       itemBuilder: (context, index) {
         final item = widget.items[index];
+        return _buildDraggableItem(item, index);
+      },
+    );
+  }
+
+  Widget _buildDraggableItem(KanbanItem item, int index) {
+    return DragTarget<String>(
+      onWillAccept: (data) {
+        // Only accept items from the same column
+        return data != null && widget.column.itemIds.contains(data);
+      },
+      onAccept: (data) {
+        final draggedIndex = widget.items.indexWhere((item) => item.id == data);
+        if (draggedIndex != -1 && draggedIndex != index) {
+          widget.onReorderItem(data, index);
+        }
+      },
+      builder: (context, candidateData, rejectedData) {
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: KanbanCard(
             item: item,
             backgroundColor: widget.theme.cardColor,
             borderColor: widget.theme.cardBorderColor,
-            onMoveUp: index > 0
-                ? () => widget.onReorderItem(item.id, index - 1)
-                : null,
-            onMoveDown: index < widget.items.length - 1
-                ? () => widget.onReorderItem(item.id, index + 1)
-                : null,
             onMoveLeft: widget.canMoveLeft && widget.targetLeftHasSpace
                 ? () => widget.onMoveToColumn(item.id, 'left')
                 : null,
