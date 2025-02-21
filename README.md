@@ -9,7 +9,6 @@ A simple, customizable Kanban board widget for Flutter applications.
 - Modern, clean card design with subtle visual feedback
 - Three columns with equal widths and height that expands to the container
 - Mandatory headers with text labels and item count indicators
-- Optional footers with add item functionality (configurable per column)
 - Items displayed as cards with modern typography and layout
 - Intuitive drag-and-drop reordering within columns
 - Easy column-to-column movement with directional controls
@@ -29,7 +28,6 @@ A simple, customizable Kanban board widget for Flutter applications.
 
 ### Column Features
 - Mandatory headers with item count indicators
-- Optional footers for adding new items
 - Configurable add item functionality per column
 - Item count with optional limit indicator
 - Optional column limits (unlimited by default)
@@ -62,8 +60,6 @@ class MyHomePage extends StatelessWidget {
 ```dart
 KanbanBoard(
   columnTitles: ['Backlog', 'In Progress', 'Done'],
-  // Only Backlog column can add new items
-  columnsWithFooter: {'Backlog'},
   // In Progress is limited, others are unlimited
   columnLimits: {
     'In Progress': 3,  // Limited to 3 items
@@ -92,19 +88,10 @@ The board supports various column configurations:
    - Displays item count
    - Shows limit if configured
 
-2. **Footers (Optional)**
-   - Can be enabled/disabled per column
-   - Provides add item functionality
-   - Only shown in specified columns
-   - Typical use cases:
-     - Backlog column with add functionality
-     - Work columns for tracking only
-     - Archive columns for completed items
-
-3. **Common Configurations**
-   - Backlog: Footer enabled, no limit
-   - Work in Progress: No footer, with limit
-   - Done: No footer, no limit
+2. **Common Configurations**
+   - Backlog: No limit
+   - Work in Progress: With limit
+   - Done: No limit
 
 ### Customization
 
@@ -131,9 +118,6 @@ KanbanBoard(
     // 'Done' has no limit specified, so it can hold unlimited items
   },
   
-  // Specify which columns should have add item functionality
-  columnsWithFooter: {'To Do'},  // Only To Do column can add items
-  
   // Custom column titles
   columnTitles: ['Backlog', 'Doing', 'Completed'],
   
@@ -144,7 +128,6 @@ KanbanBoard(
     cardColor: Colors.blue.shade50,
     cardBorderColor: Colors.blue.shade200,
     headerColor: Colors.blue.shade500,
-    footerColor: Colors.white,
   ),
 )
 ```
@@ -158,7 +141,10 @@ The `KanbanBoardTheme` class allows you to customize the following colors:
 - `cardColor`: The background color of the cards
 - `cardBorderColor`: The border color of the cards
 - `headerColor`: The background color of column headers
-- `footerColor`: The background color of column footers
+- `headerTextColor`: The text color of column headers
+- `cardTitleColor`: The text color of card titles
+- `cardSubtitleColor`: The text color of card subtitles
+- `countTextColor`: The text color of item count badges
 
 ### Interaction Guidelines
 
