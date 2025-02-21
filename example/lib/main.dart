@@ -31,53 +31,36 @@ class ExamplePage extends StatelessWidget {
       KanbanItem(
         id: '1',
         title: 'Design User Interface',
-        subtitle: 'Create wireframes and mockups',
+        subtitle: 'github.com/org/repo/issues/123',
       ),
       KanbanItem(
         id: '2',
         title: 'Setup CI/CD Pipeline',
-        subtitle: 'Configure automated builds and tests',
-      ),
-      KanbanItem(
-        id: '3',
-        title: 'User Authentication',
-        subtitle: 'Implement login and registration',
-      ),
-      KanbanItem(
-        id: '4',
-        title: 'Database Schema',
-        subtitle: 'Design initial data structure',
+        subtitle: 'Link to Jenkins configuration',
       ),
     ];
 
     final inProgressItems = [
       KanbanItem(
-        id: '5',
-        title: 'API Integration',
-        subtitle: 'Connect to backend services',
+        id: '3',
+        title: 'User Authentication',
+        subtitle: 'PR: github.com/org/repo/pull/456',
       ),
+    ];
+
+    final reviewItems = [
       KanbanItem(
-        id: '6',
-        title: 'Unit Tests',
-        subtitle: 'Write test cases for core features',
+        id: '4',
+        title: 'API Integration',
+        subtitle: 'Pending review: github.com/org/repo/pull/789',
       ),
     ];
 
     final doneItems = [
       KanbanItem(
-        id: '7',
+        id: '5',
         title: 'Project Setup',
-        subtitle: 'Initialize repository and dependencies',
-      ),
-      KanbanItem(
-        id: '8',
-        title: 'Requirements Doc',
-        subtitle: 'Document project specifications',
-      ),
-      KanbanItem(
-        id: '9',
-        title: 'Tech Stack Decision',
-        subtitle: 'Choose frameworks and tools',
+        subtitle: 'Completed on 2024-01-20',
       ),
     ];
 
@@ -98,14 +81,31 @@ class ExamplePage extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        // Using the new standard factory constructor
-        child: KanbanBoard.standard(
+        child: KanbanBoard(
           theme: customTheme,
-          backlogItems: backlogItems,
-          inProgressItems: inProgressItems,
-          doneItems: doneItems,
-          backlogLimit: 10, // Limit backlog to 10 items
-          workInProgressLimit: 3, // Limit WIP to 3 items
+          columns: [
+            KanbanColumnConfig(
+              title: 'Backlog',
+              initialItems: backlogItems,
+              canAddItems: true,
+            ),
+            KanbanColumnConfig(
+              title: 'In Progress',
+              initialItems: inProgressItems,
+              limit: 2,
+              canAddItems: true,
+            ),
+            KanbanColumnConfig(
+              title: 'Review',
+              initialItems: reviewItems,
+              limit: 3,
+            ),
+            KanbanColumnConfig(
+              title: 'Done',
+              initialItems: doneItems,
+              canAddItems: true,
+            ),
+          ],
         ),
       ),
     );

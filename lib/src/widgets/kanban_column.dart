@@ -19,11 +19,6 @@ class KanbanColumnWidget extends StatefulWidget {
   final bool targetRightHasSpace;
   final KanbanBoardTheme theme;
 
-  /// Controls whether this column shows a footer with add item functionality.
-  /// If false, no footer will be shown regardless of onAddItem callback.
-  /// If true, footer will be shown only if onAddItem is also provided.
-  final bool showFooter;
-
   const KanbanColumnWidget({
     super.key,
     required this.column,
@@ -36,7 +31,6 @@ class KanbanColumnWidget extends StatefulWidget {
     required this.targetLeftHasSpace,
     required this.targetRightHasSpace,
     required this.theme,
-    this.showFooter = true,
   });
 
   @override
@@ -65,6 +59,7 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(16.0),
+      height: 64.0,
       decoration: BoxDecoration(
         color: widget.theme.headerColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(8.0)),
@@ -78,6 +73,7 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Text(
@@ -106,11 +102,29 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
               ),
             ),
           ),
-          if (widget.showFooter && widget.onAddItem != null)
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: widget.column.canAddItem() ? _showAddItemDialog : null,
-              tooltip: 'Add New Item',
+          if (widget.onAddItem != null)
+            Container(
+              margin: const EdgeInsets.only(left: 8.0),
+              height: 32.0,
+              width: 32.0,
+              decoration: BoxDecoration(
+                color: widget.column.canAddItem()
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.add_rounded, size: 20.0),
+                padding: EdgeInsets.zero,
+                color: widget.column.canAddItem()
+                    ? Colors.white
+                    : Colors.grey.shade500,
+                tooltip: widget.column.canAddItem()
+                    ? 'Add New Item'
+                    : 'Column is at capacity',
+                onPressed:
+                    widget.column.canAddItem() ? _showAddItemDialog : null,
+              ),
             ),
         ],
       ),
