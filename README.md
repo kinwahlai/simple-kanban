@@ -2,20 +2,39 @@
 
 A simple, customizable Kanban board widget for Flutter applications.
 
+> This widget was developed with the assistance of [Cursor](https://cursor.sh/), an AI-powered code editor.
+
 ## Features
 
+- Modern, clean card design with subtle visual feedback
 - Three columns with equal widths and height that expands to the container
 - Headers and footers that stick to the top and bottom
-- Header with text labels
-- Footer with plus icon and text field for adding new items
-- Items displayed as cards with title and subtitle
-- Rounded corner card style with thin border line and shadow
-- Customizable background colors with proper contrast
-- Drag and drop functionality for rearranging items
-- Column limits to control maximum items per column
-- Validation when moving items between columns
-- Customizable initial items and column limits
-- Fully customizable colors through theming
+- Headers with text labels and item count indicators
+- Footers with plus icon and text field for adding new items
+- Items displayed as cards with modern typography and layout
+- Intuitive drag-and-drop reordering within columns
+- Easy column-to-column movement with directional controls
+- Strict column limits with visual feedback
+- Smart button states that reflect available actions
+- Customizable themes and colors
+- Responsive design that adapts to container size
+
+### Card Features
+- Clean, modern typography with optimized spacing
+- Subtle gradient background for depth
+- Grab cursor indicator for draggable items
+- Elevation changes during drag operations
+- Right-aligned movement controls
+- Visual feedback for available actions
+- Tooltips for better usability
+
+### Column Features
+- Item count with limit indicator
+- Strict enforcement of column limits
+- Visual feedback when columns are full
+- Smooth drag-and-drop reordering
+- Add new items through text input
+- Customizable column titles and limits
 
 ## Getting Started
 
@@ -96,6 +115,30 @@ The `KanbanBoardTheme` class allows you to customize the following colors:
 - `headerColor`: The background color of column headers
 - `footerColor`: The background color of column footers
 
+### Interaction Guidelines
+
+The Kanban board supports two types of item movement:
+
+1. **Drag and Drop**
+   - Drag items within a column to reorder them
+   - Visual feedback indicates when dragging is in progress
+   - Items cannot be dropped in columns that are at their limit
+
+2. **Button Controls**
+   - Left/right buttons for moving items between columns
+   - Buttons are automatically disabled when:
+     - There is no adjacent column in that direction
+     - The target column is at its limit
+   - Tooltips provide additional context for button actions
+
+### Column Limits
+
+Column limits are strictly enforced:
+- Visual indicators show current count vs. limit
+- Movement controls are disabled when target column is full
+- Drag and drop operations respect column limits
+- Add item button is disabled when column is full
+
 ## Example
 
 Check out the [example](example) directory for a complete sample application using the Simple Kanban widget.
@@ -110,3 +153,12 @@ To run the example:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## TODO
+
+- [ ] Add animated GIFs demonstrating:
+  - Drag and drop reordering
+  - Column-to-column movement
+  - Column limit enforcement
+  - Card interactions and visual feedback
+  - Adding new items
