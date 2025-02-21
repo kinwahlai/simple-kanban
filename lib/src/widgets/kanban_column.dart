@@ -102,7 +102,11 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
   Widget _buildItemList() {
     return DragTarget<String>(
       onWillAccept: (data) {
-        return widget.column.canAddItem();
+        // Allow dropping if either:
+        // 1. The item is from another column and we have space
+        // 2. The item is from this column (reordering)
+        return widget.column.itemIds.contains(data) ||
+            widget.column.canAddItem();
       },
       onAccept: (itemId) {
         widget.onMoveItem(itemId, widget.column.title);
