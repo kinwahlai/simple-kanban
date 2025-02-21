@@ -1,16 +1,17 @@
 class KanbanColumn {
   final String title;
   final List<String> itemIds;
-  final int limit;
+  final int? limit;
 
-  KanbanColumn({
+  const KanbanColumn({
     required this.title,
     required this.itemIds,
-    required this.limit,
+    this.limit,
   });
 
   bool canAddItem() {
-    return itemIds.length < limit;
+    if (limit == null) return true;
+    return itemIds.length < (limit ?? 0);
   }
 
   KanbanColumn copyWith({
