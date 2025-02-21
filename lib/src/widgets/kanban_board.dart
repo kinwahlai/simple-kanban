@@ -104,48 +104,55 @@ class _KanbanBoardState extends State<KanbanBoard> {
     });
   }
 
-  void _moveItem(String itemId, String targetColumnTitle) {
-    final sourceColumnIndex = _columns.indexWhere(
+  void _moveToColumn(String itemId, String direction) {
+    final currentColumnIndex = _columns.indexWhere(
       (col) => col.itemIds.contains(itemId),
     );
-    final targetColumnIndex = _columns.indexWhere(
-      (col) => col.title == targetColumnTitle,
-    );
+    if (currentColumnIndex == -1) return;
 
-    if (sourceColumnIndex == -1 || targetColumnIndex == -1) return;
+    int targetColumnIndex;
+    if (direction == 'left') {
+      targetColumnIndex = currentColumnIndex - 1;
+    } else if (direction == 'right') {
+      targetColumnIndex = currentColumnIndex + 1;
+    } else {
+      return;
+    }
 
-    final sourceColumn = _columns[sourceColumnIndex];
+    if (targetColumnIndex < 0 || targetColumnIndex >= _columns.length) return;
+
+    final sourceColumn = _columns[currentColumnIndex];
     final targetColumn = _columns[targetColumnIndex];
 
-    // If moving to a different column
-    if (sourceColumnIndex != targetColumnIndex) {
-      if (!targetColumn.canAddItem()) return;
+    // Check if target column has space
+    if (!targetColumn.canAddItem()) return;
 
-      setState(() {
-        _columns[sourceColumnIndex] = sourceColumn.copyWith(
-          itemIds: sourceColumn.itemIds.where((id) => id != itemId).toList(),
-        );
-        _columns[targetColumnIndex] = targetColumn.copyWith(
-          itemIds: [...targetColumn.itemIds, itemId],
-        );
-      });
-    }
-    // If reordering within the same column
-    else {
-      final currentIndex = sourceColumn.itemIds.indexOf(itemId);
-      if (currentIndex == -1) return;
+    setState(() {
+      _columns[currentColumnIndex] = sourceColumn.copyWith(
+        itemIds: sourceColumn.itemIds.where((id) => id != itemId).toList(),
+      );
+      _columns[targetColumnIndex] = targetColumn.copyWith(
+        itemIds: [...targetColumn.itemIds, itemId],
+      );
+    });
+  }
 
-      // Remove from current position and add to the end
-      final newItemIds = List<String>.from(sourceColumn.itemIds);
+  void _reorderItem(String itemId, int newIndex) {
+    final columnIndex = _columns.indexWhere(
+      (col) => col.itemIds.contains(itemId),
+    );
+    if (columnIndex == -1) return;
+
+    final column = _columns[columnIndex];
+    final currentIndex = column.itemIds.indexOf(itemId);
+    if (currentIndex == -1 || currentIndex == newIndex) return;
+
+    setState(() {
+      final newItemIds = List<String>.from(column.itemIds);
       newItemIds.removeAt(currentIndex);
-      newItemIds.add(itemId);
-
-      setState(() {
-        _columns[sourceColumnIndex] = sourceColumn.copyWith(
-          itemIds: newItemIds,
-        );
-      });
-    }
+      newItemIds.insert(newIndex, itemId);
+      _columns[columnIndex] = column.copyWith(itemIds: newItemIds);
+    });
   }
 
   List<KanbanItem> _getItemsForColumn(KanbanColumn column) {
@@ -167,7 +174,17 @@ class _KanbanBoardState extends State<KanbanBoard> {
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: _columns.map((column) {
+        children: _columns.asMap().entries.map((entry) {
+          final index = entry.key;
+          final column = entry.value;
+
+          // Check if adjacent columns have space
+          final leftHasSpace =
+              index > 0 ? _columns[index - 1].canAddItem() : false;
+          final rightHasSpace = index < _columns.length - 1
+              ? _columns[index + 1].canAddItem()
+              : false;
+
           return Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -175,7 +192,12 @@ class _KanbanBoardState extends State<KanbanBoard> {
                 column: column,
                 items: _getItemsForColumn(column),
                 onAddItem: (title) => _addItem(column.title, title),
-                onMoveItem: _moveItem,
+                onMoveToColumn: _moveToColumn,
+                onReorderItem: _reorderItem,
+                canMoveLeft: index > 0,
+                canMoveRight: index < _columns.length - 1,
+                targetLeftHasSpace: leftHasSpace,
+                targetRightHasSpace: rightHasSpace,
                 theme: theme,
               ),
             ),
