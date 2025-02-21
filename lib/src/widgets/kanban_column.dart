@@ -97,7 +97,9 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
               borderRadius: BorderRadius.circular(12.0),
             ),
             child: Text(
-              '${widget.items.length}/${widget.column.limit}',
+              widget.column.limit != null
+                  ? '${widget.items.length}/${widget.column.limit}'
+                  : '${widget.items.length}',
               style: const TextStyle(
                 fontSize: 12.0,
                 fontWeight: FontWeight.w500,

@@ -26,41 +26,66 @@ class ExamplePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Example of initial items
+    // Example of initial items with mixed column limits
     final initialItems = {
       'To Do': [
         KanbanItem(
           id: '1',
-          title: 'Design UI',
+          title: 'Design User Interface',
           subtitle: 'Create wireframes and mockups',
         ),
         KanbanItem(
           id: '2',
-          title: 'Implement Backend',
-          subtitle: 'Set up API endpoints',
+          title: 'Setup CI/CD Pipeline',
+          subtitle: 'Configure automated builds and tests',
+        ),
+        KanbanItem(
+          id: '3',
+          title: 'User Authentication',
+          subtitle: 'Implement login and registration',
+        ),
+        KanbanItem(
+          id: '4',
+          title: 'Database Schema',
+          subtitle: 'Design initial data structure',
         ),
       ],
       'In Progress': [
         KanbanItem(
-          id: '3',
-          title: 'Write Tests',
-          subtitle: 'Unit and integration tests',
+          id: '5',
+          title: 'API Integration',
+          subtitle: 'Connect to backend services',
+        ),
+        KanbanItem(
+          id: '6',
+          title: 'Unit Tests',
+          subtitle: 'Write test cases for core features',
         ),
       ],
       'Done': [
         KanbanItem(
-          id: '4',
+          id: '7',
           title: 'Project Setup',
           subtitle: 'Initialize repository and dependencies',
+        ),
+        KanbanItem(
+          id: '8',
+          title: 'Requirements Doc',
+          subtitle: 'Document project specifications',
+        ),
+        KanbanItem(
+          id: '9',
+          title: 'Tech Stack Decision',
+          subtitle: 'Choose frameworks and tools',
         ),
       ],
     };
 
-    // Example of custom column limits
+    // Example of mixed column limits
     final columnLimits = {
-      'To Do': 6,
-      'In Progress': 4,
-      'Done': 8,
+      // No limit for To Do (backlog)
+      'In Progress': 3, // Limit work in progress to 3 items
+      // No limit for Done
     };
 
     // Example of custom theme

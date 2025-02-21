@@ -63,7 +63,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
 
     // Initialize columns with provided limits and items
     _columns = widget.columnTitles.map((title) {
-      final limit = widget.columnLimits?[title] ?? _getDefaultLimit(title);
+      final limit = widget.columnLimits?[title];
       final columnItems = widget.initialItems?[title] ?? [];
       return KanbanColumn(
         title: title,
