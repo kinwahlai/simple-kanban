@@ -14,7 +14,7 @@ A simple, customizable Kanban board widget for Flutter applications.
 - Easy column-to-column movement with directional controls
 - Flexible column limits (optional per column)
 - Smart button states that reflect available actions
-- Customizable themes and colors
+- Customizable themes and colors with dark mode support
 - Responsive design that adapts to container size
 
 ### Card Features
@@ -34,6 +34,12 @@ A simple, customizable Kanban board widget for Flutter applications.
 - Visual feedback when columns reach their limit
 - Smooth drag-and-drop reordering
 - Customizable column titles and limits
+
+### Theme Support
+- Light and dark mode themes
+- Customizable colors for all components
+- Automatic theme adaptation based on system settings
+- Consistent visual hierarchy in both modes
 
 ## Examples
 
@@ -81,7 +87,7 @@ final doneItems = [
   ),
 ];
 
-// Create a custom Kanban board with 4 columns
+// Create a custom Kanban board with 4 columns and dark mode support
 KanbanBoard(
   theme: KanbanBoardTheme(
     backgroundColor: isDark ? Color(0xFF1E1E1E) : Colors.grey.shade100,
@@ -228,15 +234,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
   - Column-to-column movement with button controls
   - Column limit enforcement and feedback
   - Mixed limited/unlimited column behavior
-  - Card interactions and visual feedback
   - Adding new items to limited vs unlimited columns
+  - Dark mode transitions
 
-- [ ] Test Scenarios:
-  - [ ] Verify unlimited columns accept items beyond typical limits
-  - [ ] Test movement between limited and unlimited columns
-  - [ ] Validate limit enforcement when moving items
-  - [ ] Check visual indicators for both column types
-  - [ ] Verify add item behavior in both column types
-  - [ ] Test drag and drop between different column types
-  - [ ] Validate button states for all column combinations
-  - [ ] Check tooltip accuracy for movement controls
+- [ ] Mobile Layout Improvements - need a better layout for mobile
+
