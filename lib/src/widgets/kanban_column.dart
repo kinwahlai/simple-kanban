@@ -66,13 +66,17 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            widget.column.title,
-            style: const TextStyle(
-              fontSize: 18.0,
-              fontWeight: FontWeight.bold,
+          Expanded(
+            child: Text(
+              widget.column.title,
+              style: const TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+          const SizedBox(width: 8.0),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             decoration: BoxDecoration(
@@ -82,7 +86,7 @@ class _KanbanColumnWidgetState extends State<KanbanColumnWidget> {
             child: Text(
               '${widget.items.length}/${widget.column.limit}',
               style: const TextStyle(
-                fontSize: 14.0,
+                fontSize: 12.0,
                 fontWeight: FontWeight.w500,
               ),
             ),
