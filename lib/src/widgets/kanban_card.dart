@@ -15,6 +15,27 @@ class KanbanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return LongPressDraggable<String>(
+      data: item.id,
+      feedback: Material(
+        elevation: 4.0,
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.3,
+          child: _buildCard(),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.5,
+        child: _buildCard(),
+      ),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.grab,
+        child: _buildCard(),
+      ),
+    );
+  }
+
+  Widget _buildCard() {
     return Card(
       elevation: 2.0,
       color: backgroundColor,
@@ -22,12 +43,11 @@ class KanbanCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8.0),
         side: BorderSide(color: borderColor),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          children: [
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -49,69 +69,11 @@ class KanbanCard extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-          Draggable<String>(
-            data: item.id,
-            feedback: Material(
-              elevation: 4.0,
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.3,
-                child: _buildCard(),
-              ),
-            ),
-            childWhenDragging: Opacity(
-              opacity: 0.5,
-              child: _buildDragHandle(),
-            ),
-            child: _buildDragHandle(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCard() {
-    return Card(
-      elevation: 2.0,
-      color: backgroundColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8.0),
-        side: BorderSide(color: borderColor),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              item.title,
-              style: const TextStyle(
-                fontSize: 16.0,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4.0),
-            Text(
-              item.subtitle,
-              style: TextStyle(
-                fontSize: 14.0,
-                color: Colors.grey.shade600,
-              ),
+            Icon(
+              Icons.drag_indicator,
+              color: Colors.grey.shade400,
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDragHandle() {
-    return MouseRegion(
-      cursor: SystemMouseCursors.grab,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
-        child: Icon(
-          Icons.drag_indicator,
-          color: Colors.grey.shade400,
         ),
       ),
     );

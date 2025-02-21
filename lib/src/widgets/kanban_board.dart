@@ -117,16 +117,35 @@ class _KanbanBoardState extends State<KanbanBoard> {
     final sourceColumn = _columns[sourceColumnIndex];
     final targetColumn = _columns[targetColumnIndex];
 
-    if (!targetColumn.canAddItem()) return;
+    // If moving to a different column
+    if (sourceColumnIndex != targetColumnIndex) {
+      if (!targetColumn.canAddItem()) return;
 
-    setState(() {
-      _columns[sourceColumnIndex] = sourceColumn.copyWith(
-        itemIds: sourceColumn.itemIds.where((id) => id != itemId).toList(),
-      );
-      _columns[targetColumnIndex] = targetColumn.copyWith(
-        itemIds: [...targetColumn.itemIds, itemId],
-      );
-    });
+      setState(() {
+        _columns[sourceColumnIndex] = sourceColumn.copyWith(
+          itemIds: sourceColumn.itemIds.where((id) => id != itemId).toList(),
+        );
+        _columns[targetColumnIndex] = targetColumn.copyWith(
+          itemIds: [...targetColumn.itemIds, itemId],
+        );
+      });
+    }
+    // If reordering within the same column
+    else {
+      final currentIndex = sourceColumn.itemIds.indexOf(itemId);
+      if (currentIndex == -1) return;
+
+      // Remove from current position and add to the end
+      final newItemIds = List<String>.from(sourceColumn.itemIds);
+      newItemIds.removeAt(currentIndex);
+      newItemIds.add(itemId);
+
+      setState(() {
+        _columns[sourceColumnIndex] = sourceColumn.copyWith(
+          itemIds: newItemIds,
+        );
+      });
+    }
   }
 
   List<KanbanItem> _getItemsForColumn(KanbanColumn column) {
