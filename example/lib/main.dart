@@ -100,16 +100,15 @@ class _ExamplePageState extends State<ExamplePage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
 
     // Theme that adapts to light/dark mode
     final customTheme = KanbanBoardTheme(
       // Background colors
-      backgroundColor: isDark ? Color(0xFF1E1E1E) : Colors.grey.shade100,
-      columnColor: isDark ? Color(0xFF2D2D2D) : Colors.white,
-      cardColor: isDark ? Color(0xFF3D3D3D) : Colors.blue.shade50,
-      cardBorderColor: isDark ? Color(0xFF505050) : Colors.blue.shade200,
-      headerColor: isDark ? Color(0xFF0D47A1) : Colors.blue.shade500,
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.grey.shade100,
+      columnColor: isDark ? const Color(0xFF2D2D2D) : Colors.white,
+      cardColor: isDark ? const Color(0xFF3D3D3D) : Colors.blue.shade50,
+      cardBorderColor: isDark ? const Color(0xFF505050) : Colors.blue.shade200,
+      headerColor: isDark ? const Color(0xFF0D47A1) : Colors.blue.shade500,
 
       // Text colors
       headerTextColor: Colors.white,
@@ -119,7 +118,7 @@ class _ExamplePageState extends State<ExamplePage> {
     );
 
     return Scaffold(
-      backgroundColor: isDark ? Color(0xFF121212) : null,
+      backgroundColor: isDark ? const Color(0xFF121212) : null,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Simple Kanban Example'),
