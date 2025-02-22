@@ -64,7 +64,7 @@ class KanbanCard extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       backgroundColor,
-                      backgroundColor.withOpacity(0.95),
+                      backgroundColor.withValues(alpha: 0.95),
                     ],
                   ),
           ),
@@ -111,7 +111,7 @@ class KanbanCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         border: Border(
                           left: BorderSide(
-                            color: borderColor.withOpacity(0.7),
+                            color: borderColor.withValues(alpha: 0.7),
                             width: 1.0,
                           ),
                         ),
@@ -132,7 +132,7 @@ class KanbanCard extends StatelessWidget {
                             height: 1,
                             width: 16,
                             margin: const EdgeInsets.symmetric(vertical: 2.0),
-                            color: borderColor.withOpacity(0.7),
+                            color: borderColor.withValues(alpha: 0.7),
                           ),
                           _buildControlButton(
                             icon: Icons.chevron_right,
