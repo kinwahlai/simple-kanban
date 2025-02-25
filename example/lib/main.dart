@@ -31,6 +31,28 @@ class KanbanStorageLogger implements KanbanPlugin {
   void onBoardDisposed() {
     print('Kanban board disposed');
   }
+
+  @override
+  void onItemReordered(
+      KanbanItem item, int oldIndex, int newIndex, String columnTitle) {
+    print(
+        'Item reordered: ${item.title} in $columnTitle from position $oldIndex to $newIndex');
+  }
+
+  @override
+  void onColumnLimitReached(String columnTitle, int limit) {
+    print('Column limit reached: $columnTitle (limit: $limit)');
+  }
+
+  @override
+  void onBoardPersisted(String location) {
+    print('Board persisted to: $location');
+  }
+
+  @override
+  void onBoardLoaded(String location) {
+    print('Board loaded from: $location');
+  }
 }
 
 class MyApp extends StatefulWidget {
