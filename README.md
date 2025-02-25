@@ -16,6 +16,10 @@ A simple, customizable Kanban board widget for Flutter applications.
 - Smart button states that reflect available actions
 - Customizable themes and colors with dark mode support
 - Responsive design that adapts to container size
+- **New:** Controller-based state management for external control
+- **New:** Data persistence with SharedPreferences or File storage
+- **New:** Plugin system for extending functionality
+- **New:** Service locator pattern for dependency injection
 
 ### Card Features
 - Clean, modern typography with optimized spacing
@@ -43,7 +47,148 @@ A simple, customizable Kanban board widget for Flutter applications.
 
 ## Examples
 
-### Basic Usage with Custom Columns
+### Using Controller Pattern (Recommended)
+
+```dart
+// Create a controller with initial data
+final controller = KanbanController(
+  columns: [
+    KanbanColumnConfig(title: 'Backlog', initialItems: backlogItems),
+    KanbanColumnConfig.workInProgress(
+      title: 'In Progress', 
+      initialItems: inProgressItems,
+      limit: 3
+    ),
+    KanbanColumnConfig(title: 'Done', initialItems: doneItems),
+  ],
+  onBoardChanged: () {
+    // React to changes in the board
+    setState(() {});
+  },
+);
+
+// Use the controller with the board
+KanbanBoard(
+  controller: controller,
+  theme: customTheme,
+  onItemMoved: (item, fromColumn, toColumn) {
+    // React to item movements
+    print('${item.title} moved from $fromColumn to $toColumn');
+  },
+  onItemAdded: (item, column) {
+    // React to new items
+    print('${item.title} added to $column');
+  },
+)
+```
+
+### Using Direct Storage (Advanced)
+
+```dart
+// Create a storage with custom data structures
+final storage = KanbanStorage(
+  initialItems: {
+    'item-1': KanbanItem(id: 'item-1', title: 'Task 1', subtitle: 'Details'),
+    'item-2': KanbanItem(id: 'item-2', title: 'Task 2', subtitle: 'Info'),
+  },
+  initialColumns: [
+    KanbanColumn(title: 'Backlog', itemIds: ['item-1']),
+    KanbanColumn(title: 'In Progress', itemIds: ['item-2'], limit: 3),
+    KanbanColumn(title: 'Done', itemIds: []),
+  ],
+);
+
+// Use storage directly with the board
+KanbanBoard.fromStorage(
+  storage: storage,
+  theme: customTheme,
+)
+```
+
+### Persistence Example
+
+```dart
+// Save board state
+Future<void> saveBoard() async {
+  try {
+    await controller.saveToPrefs('kanban_board');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Board saved successfully')),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error saving board: $e')),
+    );
+  }
+}
+
+// Load board state
+Future<void> loadBoard() async {
+  try {
+    final controller = await KanbanController.loadFromPrefs(
+      'kanban_board',
+      onBoardChanged: () => setState(() {}),
+    );
+    setState(() {
+      _controller = controller;
+    });
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error loading board: $e')),
+    );
+  }
+}
+```
+
+### Plugin System Example
+
+```dart
+// Create a custom plugin
+class KanbanAnalyticsPlugin implements KanbanPlugin {
+  @override
+  void onBoardInitialized(KanbanController controller) {
+    analytics.logEvent('kanban_board_initialized');
+  }
+  
+  @override
+  void onItemAdded(KanbanItem item, String columnTitle) {
+    analytics.logEvent('kanban_item_added', {
+      'item_id': item.id,
+      'column': columnTitle
+    });
+  }
+  
+  @override
+  void onItemMoved(KanbanItem item, String fromColumn, String toColumn) {
+    analytics.logEvent('kanban_item_moved', {
+      'item_id': item.id,
+      'from_column': fromColumn,
+      'to_column': toColumn
+    });
+  }
+  
+  @override
+  void onBoardDisposed() {
+    analytics.logEvent('kanban_board_disposed');
+  }
+}
+
+// Register plugin with service locator
+void main() {
+  final analyticsPlugin = KanbanAnalyticsPlugin();
+  KanbanServiceLocator.instance.register<KanbanAnalyticsPlugin>(analyticsPlugin);
+  
+  runApp(MyApp());
+}
+
+// Use plugin in your board
+void onItemMoved(KanbanItem item, String fromColumn, String toColumn) {
+  final plugin = KanbanServiceLocator.instance.get<KanbanAnalyticsPlugin>();
+  plugin.onItemMoved(item, fromColumn, toColumn);
+}
+```
+
+### Basic Usage with Custom Columns (Legacy)
 
 ```dart
 import 'package:flutter/material.dart';
@@ -123,51 +268,6 @@ KanbanBoard(
       canAddItems: true,
     ),
   ],
-)
-```
-
-### Using Standard Three-Column Layout
-
-```dart
-// Create a standard Kanban board with predefined columns
-KanbanBoard.standard(
-  theme: KanbanBoardTheme(
-    backgroundColor: Colors.grey.shade100,
-    columnColor: Colors.white,
-    cardColor: Colors.blue.shade50,
-    cardBorderColor: Colors.blue.shade200,
-    headerColor: Colors.blue.shade500,
-    headerTextColor: Colors.white,
-    cardTitleColor: Colors.black87,
-    cardSubtitleColor: Colors.black54,
-    countTextColor: Colors.black87,
-  ),
-  // Optional: Provide initial items for each column
-  backlogItems: [
-    KanbanItem(
-      id: '1',
-      title: 'New Feature',
-      subtitle: 'Planning phase',
-    ),
-  ],
-  inProgressItems: [
-    KanbanItem(
-      id: '2',
-      title: 'Current Task',
-      subtitle: 'In development',
-    ),
-  ],
-  doneItems: [
-    KanbanItem(
-      id: '3',
-      title: 'Completed Item',
-      subtitle: 'Ready for release',
-    ),
-  ],
-  // Optional: Configure column limits
-  backlogLimit: null,  // Unlimited
-  workInProgressLimit: 3,  // Limited to 3 items
-  doneLimit: null,  // Unlimited
 )
 ```
 
