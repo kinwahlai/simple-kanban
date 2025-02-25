@@ -49,6 +49,9 @@ class KanbanController {
   // Add listener support for state management
   final List<VoidCallback> _listeners = [];
 
+  // Add plugin management
+  final List<KanbanPlugin> _plugins = [];
+
   KanbanController({
     KanbanStorage? storage,
     List<KanbanColumnConfig>? columns,
@@ -95,6 +98,11 @@ class KanbanController {
     onBoardChanged?.call();
   }
 
+  void _handleError(String operation, dynamic error) {
+    print('Kanban operation "$operation" failed: $error');
+    // Could forward to an error reporting service
+  }
+
   bool addItem(String columnTitle, String title, String subtitle) {
     try {
       final columnIndex =
@@ -106,22 +114,91 @@ class KanbanController {
 
       // Add the item
       storage.addItem(columnTitle, title, subtitle);
+
+      // Get the newly added item - it will be the last one in the column
+      final column2 = storage.columns[columnIndex];
+      if (column2.itemIds.isEmpty) return false;
+      final lastItemId = column2.itemIds.last;
+      final newItem = storage.items[lastItemId];
+
+      if (newItem != null) {
+        // Notify plugins about the added item
+        _notifyPluginsItemAdded(newItem, columnTitle);
+      }
+
+      // Check column limit
+      _checkAndNotifyColumnLimit(columnTitle);
+
       _notifyListeners();
       return true;
     } catch (e) {
-      print('Error adding item: $e');
+      _handleError('addItem', e);
       return false;
     }
   }
 
   void moveToColumn(String itemId, String direction) {
+    // Store information before the move
+    String? fromColumnTitle;
+    for (final column in storage.columns) {
+      if (column.itemIds.contains(itemId)) {
+        fromColumnTitle = column.title;
+        break;
+      }
+    }
+
+    final item = storage.items[itemId];
+
+    // Perform the operation
     storage.moveToColumn(itemId, direction);
+
+    // Find the new column for the notification
+    String? toColumnTitle;
+    for (final column in storage.columns) {
+      if (column.itemIds.contains(itemId)) {
+        toColumnTitle = column.title;
+        break;
+      }
+    }
+
+    if (item != null && fromColumnTitle != null && toColumnTitle != null) {
+      _notifyPluginsItemMoved(item, fromColumnTitle, toColumnTitle);
+      _checkAndNotifyColumnLimit(toColumnTitle);
+    }
+
     _notifyListeners();
   }
 
   void reorderItem(String itemId, int newIndex) {
-    storage.reorderItem(itemId, newIndex);
-    _notifyListeners();
+    try {
+      // Find original position for notification
+      String? columnTitle;
+      int? oldIndex;
+
+      for (final column in storage.columns) {
+        oldIndex = column.itemIds.indexOf(itemId);
+        if (oldIndex != -1) {
+          columnTitle = column.title;
+          break;
+        }
+      }
+
+      if (columnTitle != null && oldIndex != null) {
+        final item = storage.items[itemId];
+
+        // Perform the operation
+        storage.reorderItem(itemId, newIndex);
+
+        // Notify plugins
+        if (item != null) {
+          _notifyPluginsItemReordered(item, oldIndex, newIndex, columnTitle);
+        }
+
+        _notifyListeners();
+      }
+    } catch (e) {
+      _handleError('reorderItem', e);
+    }
   }
 
   List<KanbanItem> getItemsForColumn(KanbanColumn column) {
@@ -192,44 +269,135 @@ class KanbanController {
 
   // Add persistence helpers
   Future<void> saveToPrefs(String key) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonData = jsonEncode(toJson());
-    await prefs.setString(key, jsonData);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonData = jsonEncode(toJson());
+      await prefs.setString(key, jsonData);
+
+      // Notify plugins
+      for (final plugin in _plugins) {
+        plugin.onBoardPersisted("preferences:$key");
+      }
+    } catch (e) {
+      _handleError('saveToPrefs', e);
+      rethrow;
+    }
   }
 
   static Future<KanbanController> loadFromPrefs(
     String key, {
     VoidCallback? onBoardChanged,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonData = prefs.getString(key);
-    if (jsonData == null) {
-      throw Exception('No saved Kanban board found with key: $key');
-    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonData = prefs.getString(key);
+      if (jsonData == null) {
+        throw Exception('No saved Kanban board found with key: $key');
+      }
 
-    final json = jsonDecode(jsonData);
-    return fromJson(json, onBoardChanged: onBoardChanged);
+      final json = jsonDecode(jsonData);
+      final controller = fromJson(json, onBoardChanged: onBoardChanged);
+
+      // Notify plugins
+      for (final plugin in controller._plugins) {
+        plugin.onBoardLoaded("preferences:$key");
+      }
+
+      return controller;
+    } catch (e) {
+      print('Error loading Kanban board: $e');
+      rethrow;
+    }
   }
 
   // File-based persistence
   Future<void> saveToFile(String path) async {
-    final file = File(path);
-    final jsonData = jsonEncode(toJson());
-    await file.writeAsString(jsonData);
+    try {
+      final file = File(path);
+      final jsonData = jsonEncode(toJson());
+      await file.writeAsString(jsonData);
+
+      // Notify plugins
+      for (final plugin in _plugins) {
+        plugin.onBoardPersisted("file:$path");
+      }
+    } catch (e) {
+      _handleError('saveToFile', e);
+      rethrow;
+    }
   }
 
   static Future<KanbanController> loadFromFile(
     String path, {
     VoidCallback? onBoardChanged,
   }) async {
-    final file = File(path);
-    if (!await file.exists()) {
-      throw Exception('No saved Kanban board found at path: $path');
-    }
+    try {
+      final file = File(path);
+      if (!await file.exists()) {
+        throw Exception('File not found: $path');
+      }
 
-    final jsonData = await file.readAsString();
-    final json = jsonDecode(jsonData);
-    return fromJson(json, onBoardChanged: onBoardChanged);
+      final jsonData = await file.readAsString();
+      final json = jsonDecode(jsonData);
+      final controller = fromJson(json, onBoardChanged: onBoardChanged);
+
+      // Notify plugins
+      for (final plugin in controller._plugins) {
+        plugin.onBoardLoaded("file:$path");
+      }
+
+      return controller;
+    } catch (e) {
+      print('Error loading Kanban board: $e');
+      rethrow;
+    }
+  }
+
+  void registerPlugin(KanbanPlugin plugin) {
+    _plugins.add(plugin);
+    plugin.onBoardInitialized(this);
+  }
+
+  void unregisterPlugin(KanbanPlugin plugin) {
+    _plugins.remove(plugin);
+    plugin.onBoardDisposed();
+  }
+
+  void _notifyPluginsItemMoved(
+      KanbanItem item, String fromColumn, String toColumn) {
+    for (final plugin in _plugins) {
+      plugin.onItemMoved(item, fromColumn, toColumn);
+    }
+  }
+
+  void _notifyPluginsItemAdded(KanbanItem item, String columnTitle) {
+    for (final plugin in _plugins) {
+      plugin.onItemAdded(item, columnTitle);
+    }
+  }
+
+  void _notifyPluginsItemReordered(
+      KanbanItem item, int oldIndex, int newIndex, String columnTitle) {
+    for (final plugin in _plugins) {
+      plugin.onItemReordered(item, oldIndex, newIndex, columnTitle);
+    }
+  }
+
+  void _checkAndNotifyColumnLimit(String columnTitle) {
+    final columnIndex =
+        storage.columns.indexWhere((col) => col.title == columnTitle);
+    if (columnIndex == -1) return;
+
+    final column = storage.columns[columnIndex];
+    if (column.limit != null && column.itemIds.length >= column.limit!) {
+      _notifyPluginsColumnLimitReached(columnTitle, column.limit!);
+    }
+  }
+
+  void _notifyPluginsColumnLimitReached(String columnTitle, int limit) {
+    for (final plugin in _plugins) {
+      plugin.onColumnLimitReached(columnTitle, limit);
+    }
   }
 }
 
@@ -244,37 +412,39 @@ class KanbanColumnProvider {
 
   factory KanbanColumnProvider.fromStorage(KanbanStorage storage) {
     return KanbanColumnProvider(
+      configs: KanbanBoard.columnsFromStorage(storage),
       storage: storage,
-      configs: storage.columns.map((column) {
-        final isWipColumn = column.limit != null;
-
-        if (isWipColumn) {
-          return KanbanColumnConfig.workInProgress(
-            title: column.title,
-            initialItems: storage.getItemsForColumn(column),
-            limit: column.limit ?? 3,
-          );
-        } else {
-          return KanbanColumnConfig(
-            title: column.title,
-            initialItems: storage.getItemsForColumn(column),
-            canAddItems: true, // Default assumption
-          );
-        }
-      }).toList(),
     );
   }
 
-  bool canAddItemsToColumn(int index) {
-    if (index < 0 || index >= configs.length) return false;
-    return configs[index].canAddItems;
+  KanbanColumnConfig getConfig(int index) {
+    if (index >= 0 && index < configs.length) {
+      return configs[index];
+    }
+
+    // Fallback to generating a config from storage if available
+    if (index >= 0 && index < storage.columns.length) {
+      final column = storage.columns[index];
+      final items = storage.getItemsForColumn(column);
+
+      return KanbanColumnConfig(
+        title: column.title,
+        initialItems: items,
+        limit: column.limit,
+        canAddItems: true,
+      );
+    }
+
+    throw Exception('Column index out of bounds: $index');
   }
 
-  KanbanColumnConfig getConfig(int index) {
-    if (index < 0 || index >= configs.length) {
-      throw RangeError('Column index out of range');
+  bool canAddItemsToColumn(int index) {
+    try {
+      final config = getConfig(index);
+      return config.canAddItems;
+    } catch (e) {
+      return false;
     }
-    return configs[index];
   }
 }
 
@@ -421,6 +591,20 @@ class _KanbanBoardState extends State<KanbanBoard>
     _initializeController();
     _initializeColumnProvider();
     _pageController = PageController();
+
+    // Register for controller events
+    _controller.addListener(_handleControllerUpdate);
+  }
+
+  @override
+  void dispose() {
+    // Clean up controller
+    _controller.removeListener(_handleControllerUpdate);
+    super.dispose();
+  }
+
+  void _handleControllerUpdate() {
+    setState(() {});
   }
 
   void _initializeController() {
@@ -502,8 +686,33 @@ class _KanbanBoardState extends State<KanbanBoard>
   }
 
   void _reorderItem(String itemId, int newIndex) {
+    // Get the item that's being reordered
+    final item = _controller.storage.items[itemId];
+    if (item == null) return;
+
+    // Find which column contains this item
+    String? columnTitle;
+    int? oldIndex;
+    for (final column in _controller.storage.columns) {
+      oldIndex = column.itemIds.indexOf(itemId);
+      if (oldIndex != -1) {
+        columnTitle = column.title;
+        break;
+      }
+    }
+
+    if (columnTitle == null || oldIndex == null) return;
+
     setState(() {
+      // Perform the reordering
       _controller.reorderItem(itemId, newIndex);
+
+      // Call the callback - use ! to assert non-nullability
+      widget.onItemReordered?.call(item, oldIndex!, newIndex);
+
+      // Log the reordering
+      print(
+          'Item reordered: ${item.title} in $columnTitle from position $oldIndex to $newIndex');
     });
   }
 
@@ -747,18 +956,29 @@ class _KanbanBoardState extends State<KanbanBoard>
   }
 
   Future<void> _showAddItemDialog(int columnIndex) async {
-    final column = _controller.storage.columns[columnIndex];
-    if (!column.canAddItem()) return;
+    try {
+      final column = _controller.storage.columns[columnIndex];
+      if (!column.canAddItem()) {
+        // Show limit reached notification
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Column "${column.title}" has reached its limit')),
+        );
+        return;
+      }
 
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) => AddItemDialog(
-        onAdd: (title, subtitle) {
-          _addItem(column.title, title, subtitle);
-        },
-      ),
-    );
+      return showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (BuildContext context) => AddItemDialog(
+          onAdd: (title, subtitle) {
+            _addItem(column.title, title, subtitle);
+          },
+        ),
+      );
+    } catch (e) {
+      print('Error showing add item dialog: $e');
+    }
   }
 
   Widget _buildHorizontalLayout(KanbanBoardTheme theme) {
@@ -849,4 +1069,9 @@ abstract class KanbanPlugin {
   void onItemAdded(KanbanItem item, String columnTitle);
   void onItemMoved(KanbanItem item, String fromColumn, String toColumn);
   void onBoardDisposed();
+  void onItemReordered(
+      KanbanItem item, int oldIndex, int newIndex, String columnTitle);
+  void onColumnLimitReached(String columnTitle, int limit);
+  void onBoardPersisted(String location);
+  void onBoardLoaded(String location);
 }
