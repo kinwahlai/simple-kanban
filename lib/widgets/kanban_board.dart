@@ -39,33 +39,124 @@ class KanbanBoardTheme {
   });
 }
 
+class KanbanController {
+  final KanbanStorage storage;
+  final VoidCallback? onBoardChanged;
+
+  KanbanController({
+    KanbanStorage? storage,
+    List<KanbanColumnConfig>? columns,
+    this.onBoardChanged,
+  }) : storage = storage ?? _initializeStorage(columns ?? []);
+
+  static KanbanStorage _initializeStorage(List<KanbanColumnConfig> columns) {
+    final items = <String, KanbanItem>{};
+
+    // Initialize items from configurations
+    for (var config in columns) {
+      for (var item in config.initialItems) {
+        items[item.id] = item;
+      }
+    }
+
+    // Initialize columns from configurations
+    final storageColumns = columns.map((config) {
+      return KanbanColumn(
+        title: config.title,
+        itemIds: config.initialItems.map((item) => item.id).toList(),
+        limit: config.limit,
+      );
+    }).toList();
+
+    return KanbanStorage(
+      initialItems: items,
+      initialColumns: storageColumns,
+    );
+  }
+
+  void addItem(String columnTitle, String title, String subtitle) {
+    storage.addItem(columnTitle, title, subtitle);
+    onBoardChanged?.call();
+  }
+
+  void moveToColumn(String itemId, String direction) {
+    storage.moveToColumn(itemId, direction);
+    onBoardChanged?.call();
+  }
+
+  void reorderItem(String itemId, int newIndex) {
+    storage.reorderItem(itemId, newIndex);
+    onBoardChanged?.call();
+  }
+
+  List<KanbanItem> getItemsForColumn(KanbanColumn column) {
+    return storage.getItemsForColumn(column);
+  }
+
+  // Add serialization methods
+  Map<String, dynamic> toJson() {
+    // Implement serialization logic
+    return {};
+  }
+
+  static KanbanController fromJson(Map<String, dynamic> json,
+      {VoidCallback? onBoardChanged}) {
+    // Implement deserialization logic
+    return KanbanController(onBoardChanged: onBoardChanged);
+  }
+}
+
 class KanbanBoard extends StatefulWidget {
   /// List of column configurations that define the board layout
-  final List<KanbanColumnConfig> columns;
+  final List<KanbanColumnConfig>? columns;
+
+  /// Optional direct storage instance for advanced usage
+  final KanbanStorage? storage;
+
+  /// Optional controller for managing the board state
+  final KanbanController? controller;
 
   /// Optional theme for customizing the board's appearance
   final KanbanBoardTheme? theme;
 
-  /// Controls how the board is laid out. If not specified,
-  /// it will be determined based on screen width.
+  /// Controls how the board is laid out
   final KanbanLayoutMode? layoutMode;
+
+  /// Event callbacks
+  final void Function(KanbanItem item, String fromColumn, String toColumn)?
+      onItemMoved;
+  final void Function(KanbanItem item, String column)? onItemAdded;
+  final void Function(KanbanItem item, int oldIndex, int newIndex)?
+      onItemReordered;
 
   /// Width threshold below which the board switches to vertical layout
   static const double _mobileBreakpoint = 600;
 
-  /// Default column configuration for a standard board
-  static final List<KanbanColumnConfig> _defaultColumns = [
-    KanbanColumnConfig.backlog(),
-    KanbanColumnConfig.workInProgress(limit: 3),
-    KanbanColumnConfig.done(),
-  ];
-
   KanbanBoard({
     super.key,
-    List<KanbanColumnConfig>? columns,
+    this.columns,
+    this.storage,
+    this.controller,
     this.theme,
     this.layoutMode,
-  }) : columns = columns ?? _defaultColumns;
+    this.onItemMoved,
+    this.onItemAdded,
+    this.onItemReordered,
+  }) : assert((columns != null) || (storage != null) || (controller != null),
+            'Either columns, storage, or controller must be provided');
+
+  /// Creates a Kanban board from an existing storage instance
+  factory KanbanBoard.fromStorage({
+    required KanbanStorage storage,
+    KanbanBoardTheme? theme,
+    KanbanLayoutMode? layoutMode,
+  }) {
+    return KanbanBoard(
+      storage: storage,
+      theme: theme,
+      layoutMode: layoutMode,
+    );
+  }
 
   /// Creates a standard three-column board with typical settings
   factory KanbanBoard.standard({
@@ -98,78 +189,65 @@ class KanbanBoard extends StatefulWidget {
 
   @override
   State<KanbanBoard> createState() => _KanbanBoardState();
+
+  static KanbanController of(BuildContext context) {
+    final state = context.findAncestorStateOfType<_KanbanBoardState>();
+    if (state == null) {
+      throw FlutterError(
+          'KanbanBoard.of() called with a context that does not contain a KanbanBoard.');
+    }
+    return state._controller;
+  }
 }
 
 class _KanbanBoardState extends State<KanbanBoard>
     with SingleTickerProviderStateMixin {
-  late final KanbanStorage _storage;
+  late final KanbanController _controller;
   late final PageController _pageController;
   int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
-    _initializeBoard();
+    _controller =
+        widget.controller ?? KanbanController(columns: widget.columns);
     _pageController = PageController();
-  }
-
-  void _initializeBoard() {
-    final items = <String, KanbanItem>{};
-
-    // Initialize items from the configurations
-    for (var config in widget.columns) {
-      for (var item in config.initialItems) {
-        items[item.id] = item;
-      }
-    }
-
-    // Initialize columns from configurations
-    final columns = widget.columns.map((config) {
-      return KanbanColumn(
-        title: config.title,
-        itemIds: config.initialItems.map((item) => item.id).toList(),
-        limit: config.limit,
-      );
-    }).toList();
-
-    _storage = KanbanStorage(
-      initialItems: items,
-      initialColumns: columns,
-    );
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
   }
 
   void _addItem(String columnTitle, String title, String subtitle) {
     setState(() {
-      _storage.addItem(columnTitle, title, subtitle);
+      _controller.addItem(columnTitle, title, subtitle);
+
+      // Find the added item and trigger callback
+      final column = _controller.storage.columns
+          .firstWhere((col) => col.title == columnTitle);
+      final addedItemId = column.itemIds.last;
+      final addedItem = _controller.storage.items[addedItemId]!;
+
+      widget.onItemAdded?.call(addedItem, columnTitle);
     });
   }
 
   void _moveToColumn(String itemId, String direction) {
     setState(() {
-      _storage.moveToColumn(itemId, direction);
+      _controller.moveToColumn(itemId, direction);
     });
   }
 
   void _reorderItem(String itemId, int newIndex) {
     setState(() {
-      _storage.reorderItem(itemId, newIndex);
+      _controller.reorderItem(itemId, newIndex);
     });
   }
 
   List<KanbanItem> _getItemsForColumn(KanbanColumn column) {
-    return _storage.getItemsForColumn(column);
+    return _controller.getItemsForColumn(column);
   }
 
   Widget _buildPageIndicator(KanbanBoardTheme theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(_storage.columns.length, (index) {
+      children: List.generate(_controller.storage.columns.length, (index) {
         return Container(
           width: 8.0,
           height: 8.0,
@@ -229,7 +307,7 @@ class _KanbanBoardState extends State<KanbanBoard>
                           Row(
                             children: [
                               Text(
-                                _storage.columns[_currentPage].title,
+                                _controller.storage.columns[_currentPage].title,
                                 style: TextStyle(
                                   color: theme.headerTextColor,
                                   fontSize: 18.0,
@@ -248,9 +326,11 @@ class _KanbanBoardState extends State<KanbanBoard>
                                   borderRadius: BorderRadius.circular(12.0),
                                 ),
                                 child: Text(
-                                  _storage.columns[_currentPage].limit != null
-                                      ? '${_storage.getItemsForColumn(_storage.columns[_currentPage]).length}/${_storage.columns[_currentPage].limit}'
-                                      : '${_storage.getItemsForColumn(_storage.columns[_currentPage]).length}',
+                                  _controller.storage.columns[_currentPage]
+                                              .limit !=
+                                          null
+                                      ? '${_controller.storage.getItemsForColumn(_controller.storage.columns[_currentPage]).length}/${_controller.storage.columns[_currentPage].limit}'
+                                      : '${_controller.storage.getItemsForColumn(_controller.storage.columns[_currentPage]).length}',
                                   style: TextStyle(
                                     fontSize: 13.0,
                                     fontWeight: FontWeight.w500,
@@ -262,7 +342,7 @@ class _KanbanBoardState extends State<KanbanBoard>
                           ),
                           const Spacer(),
                           // Add button on the right with spacing
-                          if (widget.columns[_currentPage].canAddItems) ...[
+                          if (widget.columns![_currentPage].canAddItems) ...[
                             const SizedBox(
                                 width:
                                     16.0), // Increased spacing before add button
@@ -270,27 +350,29 @@ class _KanbanBoardState extends State<KanbanBoard>
                               height: 32.0,
                               width: 32.0,
                               decoration: BoxDecoration(
-                                color:
-                                    _storage.columns[_currentPage].canAddItem()
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Colors.grey.shade300,
+                                color: _controller.storage.columns[_currentPage]
+                                        .canAddItem()
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.grey.shade300,
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
                               child: IconButton(
                                 icon: const Icon(Icons.add_rounded, size: 20.0),
                                 padding: EdgeInsets.zero,
-                                color:
-                                    _storage.columns[_currentPage].canAddItem()
-                                        ? Colors.white
-                                        : Colors.grey.shade500,
-                                tooltip:
-                                    _storage.columns[_currentPage].canAddItem()
-                                        ? 'Add New Item'
-                                        : 'Column is at capacity',
-                                onPressed:
-                                    _storage.columns[_currentPage].canAddItem()
-                                        ? () => _showAddItemDialog(_currentPage)
-                                        : null,
+                                color: _controller.storage.columns[_currentPage]
+                                        .canAddItem()
+                                    ? Colors.white
+                                    : Colors.grey.shade500,
+                                tooltip: _controller
+                                        .storage.columns[_currentPage]
+                                        .canAddItem()
+                                    ? 'Add New Item'
+                                    : 'Column is at capacity',
+                                onPressed: _controller
+                                        .storage.columns[_currentPage]
+                                        .canAddItem()
+                                    ? () => _showAddItemDialog(_currentPage)
+                                    : null,
                               ),
                             ),
                           ],
@@ -300,14 +382,15 @@ class _KanbanBoardState extends State<KanbanBoard>
                   ),
                   IconButton(
                     icon: const Icon(Icons.chevron_right),
-                    onPressed: _currentPage < _storage.columns.length - 1
-                        ? () {
-                            _pageController.nextPage(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                            );
-                          }
-                        : null,
+                    onPressed:
+                        _currentPage < _controller.storage.columns.length - 1
+                            ? () {
+                                _pageController.nextPage(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              }
+                            : null,
                     color: theme.headerTextColor,
                   ),
                 ],
@@ -321,7 +404,7 @@ class _KanbanBoardState extends State<KanbanBoard>
           child: GestureDetector(
             onHorizontalDragEnd: (details) {
               if (details.primaryVelocity! < -1000 &&
-                  _currentPage < _storage.columns.length - 1) {
+                  _currentPage < _controller.storage.columns.length - 1) {
                 _pageController.nextPage(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
@@ -341,17 +424,18 @@ class _KanbanBoardState extends State<KanbanBoard>
                   _currentPage = index;
                 });
               },
-              itemCount: _storage.columns.length,
+              itemCount: _controller.storage.columns.length,
               itemBuilder: (context, index) {
-                final column = _storage.columns[index];
-                final config = widget.columns[index];
+                final column = _controller.storage.columns[index];
+                final config = widget.columns![index];
 
                 final leftHasSpace = index > 0
-                    ? _storage.columns[index - 1].canAddItem()
+                    ? _controller.storage.columns[index - 1].canAddItem()
                     : false;
-                final rightHasSpace = index < _storage.columns.length - 1
-                    ? _storage.columns[index + 1].canAddItem()
-                    : false;
+                final rightHasSpace =
+                    index < _controller.storage.columns.length - 1
+                        ? _controller.storage.columns[index + 1].canAddItem()
+                        : false;
 
                 return Container(
                   margin: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -378,7 +462,8 @@ class _KanbanBoardState extends State<KanbanBoard>
                     onMoveToColumn: _moveToColumn,
                     onReorderItem: _reorderItem,
                     canMoveLeft: index > 0,
-                    canMoveRight: index < _storage.columns.length - 1,
+                    canMoveRight:
+                        index < _controller.storage.columns.length - 1,
                     targetLeftHasSpace: leftHasSpace,
                     targetRightHasSpace: rightHasSpace,
                     theme: theme,
@@ -394,7 +479,7 @@ class _KanbanBoardState extends State<KanbanBoard>
   }
 
   Future<void> _showAddItemDialog(int columnIndex) async {
-    final column = _storage.columns[columnIndex];
+    final column = _controller.storage.columns[columnIndex];
     if (!column.canAddItem()) return;
 
     return showDialog<void>(
@@ -411,16 +496,17 @@ class _KanbanBoardState extends State<KanbanBoard>
   Widget _buildHorizontalLayout(KanbanBoardTheme theme) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: _storage.columns.asMap().entries.map((entry) {
+      children: _controller.storage.columns.asMap().entries.map((entry) {
         final index = entry.key;
         final column = entry.value;
-        final config = widget.columns[index];
+        final config = widget.columns![index];
 
         // Check if adjacent columns have space
-        final leftHasSpace =
-            index > 0 ? _storage.columns[index - 1].canAddItem() : false;
-        final rightHasSpace = index < _storage.columns.length - 1
-            ? _storage.columns[index + 1].canAddItem()
+        final leftHasSpace = index > 0
+            ? _controller.storage.columns[index - 1].canAddItem()
+            : false;
+        final rightHasSpace = index < _controller.storage.columns.length - 1
+            ? _controller.storage.columns[index + 1].canAddItem()
             : false;
 
         return Expanded(
@@ -435,7 +521,7 @@ class _KanbanBoardState extends State<KanbanBoard>
               onMoveToColumn: _moveToColumn,
               onReorderItem: _reorderItem,
               canMoveLeft: index > 0,
-              canMoveRight: index < _storage.columns.length - 1,
+              canMoveRight: index < _controller.storage.columns.length - 1,
               targetLeftHasSpace: leftHasSpace,
               targetRightHasSpace: rightHasSpace,
               theme: theme,
