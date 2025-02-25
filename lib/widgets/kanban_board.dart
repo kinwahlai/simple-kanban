@@ -7,6 +7,7 @@ import '../models/kanban_storage.dart';
 import 'add_item_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'dart:io';
 
 /// Defines how the Kanban board should be laid out
 enum KanbanLayoutMode {
@@ -207,7 +208,73 @@ class KanbanController {
     }
 
     final json = jsonDecode(jsonData);
-    return KanbanController.fromJson(json, onBoardChanged: onBoardChanged);
+    return fromJson(json, onBoardChanged: onBoardChanged);
+  }
+
+  // File-based persistence
+  Future<void> saveToFile(String path) async {
+    final file = File(path);
+    final jsonData = jsonEncode(toJson());
+    await file.writeAsString(jsonData);
+  }
+
+  static Future<KanbanController> loadFromFile(
+    String path, {
+    VoidCallback? onBoardChanged,
+  }) async {
+    final file = File(path);
+    if (!await file.exists()) {
+      throw Exception('No saved Kanban board found at path: $path');
+    }
+
+    final jsonData = await file.readAsString();
+    final json = jsonDecode(jsonData);
+    return fromJson(json, onBoardChanged: onBoardChanged);
+  }
+}
+
+class KanbanColumnProvider {
+  final List<KanbanColumnConfig> configs;
+  final KanbanStorage storage;
+
+  KanbanColumnProvider({
+    required this.configs,
+    required this.storage,
+  });
+
+  factory KanbanColumnProvider.fromStorage(KanbanStorage storage) {
+    return KanbanColumnProvider(
+      storage: storage,
+      configs: storage.columns.map((column) {
+        final isWipColumn = column.limit != null;
+
+        if (isWipColumn) {
+          return KanbanColumnConfig.workInProgress(
+            title: column.title,
+            initialItems: storage.getItemsForColumn(column),
+            limit: column.limit ?? 3,
+          );
+        } else {
+          return KanbanColumnConfig(
+            title: column.title,
+            initialItems: storage.getItemsForColumn(column),
+            canAddItems: true, // Default assumption
+          );
+        }
+      }).toList(),
+    );
+  }
+
+  bool canAddItemsToColumn(int index) {
+    if (index < 0 || index >= configs.length) return false;
+    return configs[index].canAddItems;
+  }
+
+  KanbanColumnConfig getConfig(int index) {
+    if (index < 0 || index >= configs.length) {
+      throw RangeError('Column index out of range');
+    }
+    return configs[index];
   }
 }
 
@@ -237,6 +304,16 @@ class KanbanBoard extends StatefulWidget {
   /// Width threshold below which the board switches to vertical layout
   static const double _mobileBreakpoint = 600;
 
+  /// Custom item builder
+  final Widget Function(BuildContext, KanbanItem)? itemBuilder;
+
+  /// Custom column header builder
+  final Widget Function(BuildContext, String, int, int?)? columnHeaderBuilder;
+
+  /// Custom pagination builder
+  final Widget Function(BuildContext, int currentPage, int totalPages)?
+      paginationBuilder;
+
   KanbanBoard({
     super.key,
     this.columns,
@@ -247,6 +324,9 @@ class KanbanBoard extends StatefulWidget {
     this.onItemMoved,
     this.onItemAdded,
     this.onItemReordered,
+    this.itemBuilder,
+    this.columnHeaderBuilder,
+    this.paginationBuilder,
   }) : assert((columns != null) || (storage != null) || (controller != null),
             'Either columns, storage, or controller must be provided');
 
@@ -331,20 +411,15 @@ class KanbanBoard extends StatefulWidget {
 class _KanbanBoardState extends State<KanbanBoard>
     with SingleTickerProviderStateMixin {
   late final KanbanController _controller;
+  late final KanbanColumnProvider _columnProvider;
   late final PageController _pageController;
   int _currentPage = 0;
-
-  // Derived column configurations when using storage/controller directly
-  late final List<KanbanColumnConfig> _derivedColumnConfigs;
-
-  List<KanbanColumnConfig> get _effectiveColumns =>
-      widget.columns ?? _derivedColumnConfigs;
 
   @override
   void initState() {
     super.initState();
     _initializeController();
-    _derivedColumnConfigs = KanbanBoard.columnsFromStorage(_controller.storage);
+    _initializeColumnProvider();
     _pageController = PageController();
   }
 
@@ -356,8 +431,18 @@ class _KanbanBoardState extends State<KanbanBoard>
     } else if (widget.columns != null) {
       _controller = KanbanController(columns: widget.columns);
     } else {
-      // Default fallback - should never happen with assertion in constructor
       _controller = KanbanController(columns: []);
+    }
+  }
+
+  void _initializeColumnProvider() {
+    if (widget.columns != null) {
+      _columnProvider = KanbanColumnProvider(
+        configs: widget.columns!,
+        storage: _controller.storage,
+      );
+    } else {
+      _columnProvider = KanbanColumnProvider.fromStorage(_controller.storage);
     }
   }
 
@@ -376,8 +461,43 @@ class _KanbanBoardState extends State<KanbanBoard>
   }
 
   void _moveToColumn(String itemId, String direction) {
+    // Store the item and its current column before moving
+    final item = _controller.storage.items[itemId];
+    if (item == null) return;
+
+    // Find the current column
+    String? fromColumnTitle;
+    for (final column in _controller.storage.columns) {
+      if (column.itemIds.contains(itemId)) {
+        fromColumnTitle = column.title;
+        break;
+      }
+    }
+
+    if (fromColumnTitle == null) return;
+
+    // Find the target column
+    int currentIndex = _controller.storage.columns
+        .indexWhere((column) => column.title == fromColumnTitle);
+
+    int targetIndex;
+    if (direction == 'left') {
+      targetIndex = currentIndex - 1;
+    } else {
+      targetIndex = currentIndex + 1;
+    }
+
+    if (targetIndex < 0 || targetIndex >= _controller.storage.columns.length)
+      return;
+
+    String toColumnTitle = _controller.storage.columns[targetIndex].title;
+
+    // Move the item
     setState(() {
       _controller.moveToColumn(itemId, direction);
+
+      // Notify about the move
+      widget.onItemMoved?.call(item, fromColumnTitle!, toColumnTitle);
     });
   }
 
@@ -489,7 +609,8 @@ class _KanbanBoardState extends State<KanbanBoard>
                           ),
                           const Spacer(),
                           // Add button on the right with spacing
-                          if (_effectiveColumns[_currentPage].canAddItems) ...[
+                          if (_columnProvider
+                              .canAddItemsToColumn(_currentPage)) ...[
                             const SizedBox(
                                 width:
                                     16.0), // Increased spacing before add button
@@ -574,7 +695,7 @@ class _KanbanBoardState extends State<KanbanBoard>
               itemCount: _controller.storage.columns.length,
               itemBuilder: (context, index) {
                 final column = _controller.storage.columns[index];
-                final config = _effectiveColumns[index];
+                final config = _columnProvider.getConfig(index);
 
                 final leftHasSpace = index > 0
                     ? _controller.storage.columns[index - 1].canAddItem()
@@ -646,7 +767,7 @@ class _KanbanBoardState extends State<KanbanBoard>
       children: _controller.storage.columns.asMap().entries.map((entry) {
         final index = entry.key;
         final column = entry.value;
-        final config = _effectiveColumns[index];
+        final config = _columnProvider.getConfig(index);
 
         // Check if adjacent columns have space
         final leftHasSpace = index > 0
@@ -698,4 +819,34 @@ class _KanbanBoardState extends State<KanbanBoard>
           : _buildHorizontalLayout(theme),
     );
   }
+}
+
+// Create a service locator
+class KanbanServiceLocator {
+  static final KanbanServiceLocator instance = KanbanServiceLocator._();
+
+  KanbanServiceLocator._();
+
+  final _services = <Type, Object>{};
+
+  void register<T extends Object>(T service) {
+    _services[T] = service;
+  }
+
+  T get<T>() {
+    final service = _services[T];
+    if (service == null) {
+      throw Exception('Service of type $T not registered');
+    }
+    return service as T;
+  }
+}
+
+// Use it for storage, analytics, etc.
+
+abstract class KanbanPlugin {
+  void onBoardInitialized(KanbanController controller);
+  void onItemAdded(KanbanItem item, String columnTitle);
+  void onItemMoved(KanbanItem item, String fromColumn, String toColumn);
+  void onBoardDisposed();
 }
